@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/actions/guard";
-import { isPlaceKind, type PlaceKind } from "@/lib/places";
+import { CATEGORY_KEY_PREFIX, isPlaceKind, type PlaceKind } from "@/lib/places";
 import { uploadPhoto, deletePhotos, imageRatio } from "@/lib/storage";
 
 export type FormState = { error: string } | undefined;
@@ -29,9 +29,24 @@ function files(formData: FormData, key: string): File[] {
     .filter((value): value is File => value instanceof File && value.size > 0);
 }
 
-function kindOf(formData: FormData): PlaceKind {
-  const value = formData.get("kind");
-  return isPlaceKind(value) ? value : "RESTAURANT";
+/**
+ * The `type` field is a built-in kind ("TRIP") or `c:<id>` for a custom
+ * category, whose kind is read from the database, not trusted from the form.
+ */
+async function typeFromForm(
+  formData: FormData,
+): Promise<{ kind: PlaceKind; categoryId: number | null }> {
+  const value = str(formData, "type");
+  if (value.startsWith(CATEGORY_KEY_PREFIX)) {
+    const id = Number(value.slice(CATEGORY_KEY_PREFIX.length));
+    const category = Number.isInteger(id)
+      ? await db.orm.public.Category.select("id", "baseKind")
+          .where({ id })
+          .first()
+      : null;
+    if (category) return { kind: category.baseKind, categoryId: category.id };
+  }
+  return { kind: isPlaceKind(value) ? value : "RESTAURANT", categoryId: null };
 }
 
 function coord(formData: FormData, key: string): number {
@@ -40,11 +55,12 @@ function coord(formData: FormData, key: string): number {
   return Number(raw);
 }
 
-// ---------- Place (restaurant, trip or event) ----------
+// ---------- Place (restaurant, trip, event or custom type) ----------
 
 type PlaceFields = {
   name: string;
   kind: PlaceKind;
+  categoryId: number | null;
   eventDate: string | null;
   address: string | null;
   notes: string | null;
@@ -52,11 +68,13 @@ type PlaceFields = {
   lng: number;
 };
 
-function placeFields(formData: FormData): PlaceFields | { error: string } {
+async function placeFields(
+  formData: FormData,
+): Promise<PlaceFields | { error: string }> {
   const name = str(formData, "name");
   const lat = coord(formData, "lat");
   const lng = coord(formData, "lng");
-  const kind = kindOf(formData);
+  const { kind, categoryId } = await typeFromForm(formData);
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -66,6 +84,7 @@ function placeFields(formData: FormData): PlaceFields | { error: string } {
   return {
     name,
     kind,
+    categoryId,
     eventDate: kind === "EVENT" ? optionalStr(formData, "eventDate") : null,
     address: optionalStr(formData, "address"),
     notes: optionalStr(formData, "notes"),
@@ -80,7 +99,7 @@ export async function createRestaurant(
 ): Promise<FormState> {
   await requireUser();
 
-  const fields = placeFields(formData);
+  const fields = await placeFields(formData);
   if ("error" in fields) return fields;
 
   const restaurant = await db.orm.public.Restaurant.create({
@@ -98,7 +117,7 @@ export async function updateRestaurant(
 ): Promise<FormState> {
   await requireUser();
 
-  const fields = placeFields(formData);
+  const fields = await placeFields(formData);
   if ("error" in fields) return fields;
 
   await db.orm.public.Restaurant.where({ id }).update(fields);

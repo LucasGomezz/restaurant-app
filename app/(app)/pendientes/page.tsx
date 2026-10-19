@@ -3,18 +3,18 @@ import { EmptyState } from "@/components/EmptyState";
 import { KindFilter } from "@/components/KindFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { formatDate } from "@/lib/format";
-import { KINDS, kindFromSlug } from "@/lib/places";
+import { typeFromSlug, typeOf } from "@/lib/places";
+import { getPlaceTypes } from "@/lib/queries/categories";
 import { getPendingRestaurants } from "@/lib/queries/restaurants";
 
 export const dynamic = "force-dynamic";
 
-export default async function PendientesPage(
-  props: PageProps<"/pendientes">,
-) {
+export default async function PendientesPage(props: PageProps<"/pendientes">) {
   const { tipo } = await props.searchParams;
-  const kind = kindFromSlug(tipo);
-  const places = await getPendingRestaurants(kind);
-  const what = kind ? KINDS[kind].plural.toLowerCase() : "lugares";
+  const types = await getPlaceTypes();
+  const type = typeFromSlug(types, tipo);
+  const places = await getPendingRestaurants(type);
+  const what = type ? type.plural.toLowerCase() : "lugares";
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
@@ -26,14 +26,16 @@ export default async function PendientesPage(
             : undefined
         }
       />
-      <KindFilter basePath="/pendientes" active={kind} />
+      <KindFilter basePath="/pendientes" types={types} active={type} />
 
       {places.length === 0 ? (
         <EmptyState
-          icon={kind ? KINDS[kind].icon : "📍"}
+          icon={type ? type.icon : "📍"}
           message={`Todavía no agregaste ${what} pendientes.`}
-          actionHref={kind ? `/lugares/nuevo?tipo=${KINDS[kind].slug}` : "/lugares/nuevo"}
-          actionLabel={kind ? `Agregar ${KINDS[kind].label.toLowerCase()}` : "Agregar"}
+          actionHref={
+            type ? `/lugares/nuevo?tipo=${type.slug}` : "/lugares/nuevo"
+          }
+          actionLabel={type ? `Agregar ${type.label.toLowerCase()}` : "Agregar"}
         />
       ) : (
         <ul className="flex flex-col gap-3">
@@ -44,10 +46,10 @@ export default async function PendientesPage(
             >
               <span
                 className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-lg ring-1 ring-amber-600/15"
-                title={KINDS[place.kind].label}
+                title={typeOf(types, place).label}
                 aria-hidden
               >
-                {KINDS[place.kind].icon}
+                {typeOf(types, place).icon}
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <Link

@@ -10,7 +10,8 @@ import { TripAlbum } from "@/components/TripAlbum";
 import { VisitHeader } from "@/components/VisitHeader";
 import { VisitForm } from "@/components/VisitForm";
 import { formatDate, formatDateRange, toDateInputValue } from "@/lib/format";
-import { KINDS } from "@/lib/places";
+import { typeOf } from "@/lib/places";
+import { getPlaceTypes } from "@/lib/queries/categories";
 import { getRestaurantDetail } from "@/lib/queries/restaurants";
 import {
   deleteRestaurant,
@@ -32,11 +33,14 @@ export default async function RestaurantDetailPage({ params }: Props) {
   const restaurantId = Number(id);
   if (!Number.isInteger(restaurantId)) notFound();
 
-  const data = await getRestaurantDetail(restaurantId);
+  const [data, types] = await Promise.all([
+    getRestaurantDetail(restaurantId),
+    getPlaceTypes(),
+  ]);
   if (!data) notFound();
   const { restaurant, visit } = data;
   const isVisited = restaurant.status === "VISITED";
-  const kind = KINDS[restaurant.kind];
+  const kind = typeOf(types, restaurant);
   const backHref = `${isVisited ? "/visitados" : "/pendientes"}?tipo=${kind.slug}`;
 
   return (
@@ -136,6 +140,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
                     lng: restaurant.lng,
                     status: restaurant.status,
                     kind: restaurant.kind,
+                    icon: kind.icon,
+                    typeLabel: kind.label,
                   },
                 ]}
                 center={[restaurant.lat, restaurant.lng]}

@@ -15,7 +15,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "leaflet/dist/leaflet.css";
 import "./leaflet-overrides.css";
-import { KINDS } from "@/lib/places";
 import type { RestaurantMarker } from "@/lib/types";
 
 const PIN_SIZE = 30;
@@ -156,7 +155,7 @@ export default function Map({
           pinIcon(
             r.status === "VISITED" ? "#059669" : "#f59e0b",
             r.name,
-            KINDS[r.kind].icon,
+            r.icon,
           ),
         ]),
       ),
@@ -228,7 +227,7 @@ export default function Map({
                     {restaurant.status === "VISITED" ? "Visitado" : "Pendiente"}
                   </span>
                   <span className="text-xs text-stone-500">
-                    {KINDS[restaurant.kind].icon} {KINDS[restaurant.kind].label}
+                    {restaurant.icon} {restaurant.typeLabel}
                   </span>
                 </span>
                 <p className="text-base font-semibold text-stone-900">

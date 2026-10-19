@@ -1,24 +1,40 @@
 import "server-only";
 import { db } from "@/lib/db";
-import type { PlaceKind } from "@/lib/places";
+import { typeOf, type PlaceType } from "@/lib/places";
 import { getSignedUrl, getSignedUrls } from "@/lib/storage";
 import type { RestaurantMarker } from "@/lib/types";
 
 // The `Restaurant` model holds every place: restaurants, trips and events.
 
+type PlaceQuery = ReturnType<typeof db.orm.public.Restaurant.where>;
+
+/**
+ * Narrows a query to one type: a category matches by id; a built-in kind
+ * matches only places without a category (a "Bodega" isn't a "Restaurante").
+ */
+function ofType(query: PlaceQuery, type?: PlaceType): PlaceQuery {
+  if (!type) return query;
+  if (type.categoryId !== null) {
+    return query.where({ categoryId: type.categoryId });
+  }
+  return query.where({ kind: type.kind }).where((r) => r.categoryId.isNull());
+}
+
 export async function getRestaurantMarkers(
-  kind?: PlaceKind,
+  types: PlaceType[],
+  type?: PlaceType,
 ): Promise<RestaurantMarker[]> {
-  const rows = await db.orm.public.Restaurant.select(
-    "id",
-    "name",
-    "address",
-    "lat",
-    "lng",
-    "status",
-    "kind",
-  )
-    .where(kind ? { kind } : {})
+  const rows = await ofType(db.orm.public.Restaurant.where({}), type)
+    .select(
+      "id",
+      "name",
+      "address",
+      "lat",
+      "lng",
+      "status",
+      "kind",
+      "categoryId",
+    )
     .include("visit", (v) => v.select("coupleImageUrl", "placeImageUrl"))
     .all();
 
@@ -39,28 +55,34 @@ export async function getRestaurantMarkers(
     lng: row.lng,
     status: row.status,
     kind: row.kind,
+    icon: typeOf(types, row).icon,
+    typeLabel: typeOf(types, row).label,
     coverUrl: signed(row.visit?.coupleImageUrl),
     placeUrl: signed(row.visit?.placeImageUrl),
   }));
 }
 
-export async function getPendingRestaurants(kind?: PlaceKind) {
-  const rows = await db.orm.public.Restaurant.select(
-    "id",
-    "name",
-    "address",
-    "notes",
-    "kind",
-    "eventDate",
-    "createdAt",
+export async function getPendingRestaurants(type?: PlaceType) {
+  const rows = await ofType(
+    db.orm.public.Restaurant.where({ status: "PENDING" }),
+    type,
   )
-    .where(kind ? { status: "PENDING", kind } : { status: "PENDING" })
+    .select(
+      "id",
+      "name",
+      "address",
+      "notes",
+      "kind",
+      "categoryId",
+      "eventDate",
+      "createdAt",
+    )
     .orderBy((r) => r.createdAt.desc())
     .all();
 
   // Events are listed by when they happen (soonest first, undated last);
   // everything else keeps newest-added first.
-  if (kind !== "EVENT") return rows;
+  if (type?.kind !== "EVENT") return rows;
   return [...rows].sort((a, b) => {
     if (!a.eventDate) return b.eventDate ? 1 : 0;
     if (!b.eventDate) return -1;
@@ -68,9 +90,12 @@ export async function getPendingRestaurants(kind?: PlaceKind) {
   });
 }
 
-export async function getVisitedRestaurants(kind?: PlaceKind) {
-  const rows = await db.orm.public.Restaurant.select("id", "name", "kind")
-    .where(kind ? { status: "VISITED", kind } : { status: "VISITED" })
+export async function getVisitedRestaurants(type?: PlaceType) {
+  const rows = await ofType(
+    db.orm.public.Restaurant.where({ status: "VISITED" }),
+    type,
+  )
+    .select("id", "name", "kind", "categoryId")
     .include("visit", (v) =>
       v.select("visitDate", "endDate", "coupleImageUrl", "coupleImageRatio"),
     )
@@ -86,6 +111,7 @@ export async function getVisitedRestaurants(kind?: PlaceKind) {
       id: String(row.id),
       name: row.name,
       kind: row.kind,
+      categoryId: row.categoryId,
       visitDate: row.visit!.visitDate,
       endDate: row.visit!.endDate,
       coverRatio: row.visit!.coupleImageRatio,

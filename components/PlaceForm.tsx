@@ -2,25 +2,35 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { CategoryEditor } from "@/components/CategoryEditor";
 import { LocationPicker } from "@/components/LocationPicker";
 import { FormError } from "@/components/FormError";
+import { createCategory } from "@/lib/actions/categories";
 import type { FormState } from "@/lib/actions/restaurants";
 import { toDateInputValue } from "@/lib/format";
-import { KIND_ORDER, KINDS, type PlaceKind } from "@/lib/places";
+import {
+  categoryType,
+  typeOf,
+  type PlaceKind,
+  type PlaceType,
+} from "@/lib/places";
 
 type PlaceFormProps = {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   defaultValues?: {
     name: string;
     kind: PlaceKind;
+    categoryId: number | null;
     eventDate: string | null;
     address: string | null;
     notes: string | null;
     lat: number;
     lng: number;
   };
+  /** Built-in kinds and custom categories to choose from. */
+  types: PlaceType[];
   /** Preselected type for a new place (from `?tipo=`). */
-  initialKind?: PlaceKind;
+  initialType?: PlaceType;
   submitLabel: string;
   cancelHref: string;
 };
@@ -28,14 +38,21 @@ type PlaceFormProps = {
 export function PlaceForm({
   action,
   defaultValues,
-  initialKind,
+  types: initialTypes,
+  initialType,
   submitLabel,
   cancelHref,
 }: PlaceFormProps) {
   const [state, formAction, pending] = useActionState(action, undefined);
-  const [kind, setKind] = useState<PlaceKind>(
-    defaultValues?.kind ?? initialKind ?? "RESTAURANT",
+  const [types, setTypes] = useState(initialTypes);
+  const [typeKey, setTypeKey] = useState(
+    defaultValues
+      ? typeOf(initialTypes, defaultValues).key
+      : (initialType?.key ?? "RESTAURANT"),
   );
+  const [creatingType, setCreatingType] = useState(false);
+  const type = types.find((t) => t.key === typeKey) ?? types[0];
+  const kind = type.kind;
   const [address, setAddress] = useState(defaultValues?.address ?? "");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     defaultValues ? { lat: defaultValues.lat, lng: defaultValues.lng } : null,
@@ -45,31 +62,58 @@ export function PlaceForm({
     <form action={formAction} className="flex flex-col gap-6">
       <fieldset className="flex flex-col gap-1.5">
         <legend className="field-label mb-1.5">Tipo</legend>
-        <div className="grid grid-cols-3 gap-2">
-          {KIND_ORDER.map((option) => (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {types.map((option) => (
             <label
-              key={option}
-              className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border px-2 py-3 text-sm font-medium transition has-focus-visible:ring-4 has-focus-visible:ring-brand-500/20 ${
-                kind === option
+              key={option.key}
+              className={`flex min-w-0 cursor-pointer flex-col items-center gap-1 rounded-xl border px-2 py-3 text-sm font-medium transition has-focus-visible:ring-4 has-focus-visible:ring-brand-500/20 ${
+                typeKey === option.key
                   ? "border-brand-500 bg-brand-50 text-brand-700"
                   : "border-stone-200 bg-white text-stone-600 hover:border-stone-300"
               }`}
             >
               <input
                 type="radio"
-                name="kind"
-                value={option}
-                checked={kind === option}
-                onChange={() => setKind(option)}
+                name="type"
+                value={option.key}
+                checked={typeKey === option.key}
+                onChange={() => setTypeKey(option.key)}
                 className="sr-only"
               />
               <span className="text-xl" aria-hidden>
-                {KINDS[option].icon}
+                {option.icon}
               </span>
-              {KINDS[option].label}
+              <span className="max-w-full truncate">{option.label}</span>
             </label>
           ))}
+          <button
+            type="button"
+            onClick={() => setCreatingType((open) => !open)}
+            aria-expanded={creatingType}
+            className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed border-stone-300 px-2 py-3 text-sm font-medium text-stone-500 transition hover:border-stone-400 hover:text-stone-800"
+          >
+            <span className="text-xl" aria-hidden>
+              ＋
+            </span>
+            Nuevo tipo
+          </button>
         </div>
+
+        {creatingType && (
+          <div className="mt-2 rounded-xl border border-stone-200 bg-stone-50 p-4">
+            <CategoryEditor
+              save={createCategory}
+              onSaved={(category) => {
+                const created = categoryType(category);
+                setTypes((current) => [...current, created]);
+                setTypeKey(created.key);
+                setCreatingType(false);
+              }}
+              onCancel={() => setCreatingType(false)}
+              submitLabel="Crear tipo"
+            />
+          </div>
+        )}
       </fieldset>
 
       <div className="flex flex-col gap-1.5">
@@ -80,7 +124,7 @@ export function PlaceForm({
           id="name"
           name="name"
           required
-          placeholder={KINDS[kind].namePlaceholder}
+          placeholder={type.namePlaceholder}
           defaultValue={defaultValues?.name}
           className="input"
         />
@@ -117,7 +161,8 @@ export function PlaceForm({
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="address" className="field-label">
-          Dirección <span className="font-normal text-stone-400">(opcional)</span>
+          Dirección{" "}
+          <span className="font-normal text-stone-400">(opcional)</span>
         </label>
         <input
           id="address"

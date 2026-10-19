@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8f449a0d28d054d44f2cf8638047aaa992d18eece3c799e725caf5a8dfe521bd'>;
+  StorageHashBase<'5a63566a1dd521307545005e9be6dfde8c8aa783f4161c953227220b8d97a959'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -240,6 +240,13 @@ type DefaultLiteralValue<CodecId extends string, Encoded> = CodecId extends keyo
 
 export type FieldOutputTypes = {
   readonly public: {
+    readonly Category: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly icon: CodecTypes['pg/text@1']['output'];
+      readonly baseKind: 'RESTAURANT' | 'TRIP' | 'EVENT';
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly Dish: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly visitId: CodecTypes['pg/int4@1']['output'];
@@ -262,6 +269,7 @@ export type FieldOutputTypes = {
       readonly lng: CodecTypes['pg/float8@1']['output'];
       readonly status: 'PENDING' | 'VISITED';
       readonly kind: 'RESTAURANT' | 'TRIP' | 'EVENT';
+      readonly categoryId: CodecTypes['pg/int4@1']['output'] | null;
       readonly eventDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -282,6 +290,13 @@ export type FieldOutputTypes = {
 };
 export type FieldInputTypes = {
   readonly public: {
+    readonly Category: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly icon: CodecTypes['pg/text@1']['input'];
+      readonly baseKind: 'RESTAURANT' | 'TRIP' | 'EVENT';
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
     readonly Dish: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly visitId: CodecTypes['pg/int4@1']['input'];
@@ -304,6 +319,7 @@ export type FieldInputTypes = {
       readonly lng: CodecTypes['pg/float8@1']['input'];
       readonly status: 'PENDING' | 'VISITED';
       readonly kind: 'RESTAURANT' | 'TRIP' | 'EVENT';
+      readonly categoryId: CodecTypes['pg/int4@1']['input'] | null;
       readonly eventDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -324,6 +340,13 @@ export type FieldInputTypes = {
 };
 export type StorageColumnTypes = {
   readonly public: {
+    readonly category: {
+      readonly baseKind: 'RESTAURANT' | 'TRIP' | 'EVENT';
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly icon: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+    };
     readonly dish: {
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -340,6 +363,7 @@ export type StorageColumnTypes = {
     };
     readonly restaurant: {
       readonly address: CodecTypes['pg/text@1']['output'] | null;
+      readonly categoryId: CodecTypes['pg/int4@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly eventDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -366,6 +390,13 @@ export type StorageColumnTypes = {
 };
 export type StorageColumnInputTypes = {
   readonly public: {
+    readonly category: {
+      readonly baseKind: 'RESTAURANT' | 'TRIP' | 'EVENT';
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly icon: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+    };
     readonly dish: {
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -382,6 +413,7 @@ export type StorageColumnInputTypes = {
     };
     readonly restaurant: {
       readonly address: CodecTypes['pg/text@1']['input'] | null;
+      readonly categoryId: CodecTypes['pg/int4@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly eventDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -424,6 +456,44 @@ type ContractBase = Omit<
         readonly kind: 'postgres-schema';
         readonly entries: {
           readonly table: {
+            readonly category: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly icon: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly baseKind: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['name'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
             readonly dish: {
               columns: {
                 readonly id: {
@@ -588,6 +658,11 @@ type ContractBase = Omit<
                     readonly value: DefaultLiteralValue<'pg/text@1', 'RESTAURANT'>;
                   };
                 };
+                readonly categoryId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
                 readonly eventDate: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
@@ -620,8 +695,27 @@ type ContractBase = Omit<
                   readonly columns: readonly ['kind'];
                   readonly unique: false;
                 },
+                {
+                  readonly name: 'restaurant_categoryId_idx_15c304f2';
+                  readonly prefix: 'restaurant_categoryId_idx';
+                  readonly columns: readonly ['categoryId'];
+                  readonly unique: false;
+                },
               ];
-              foreignKeys: readonly [];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'restaurant';
+                    readonly columns: readonly ['categoryId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'category';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly visit: {
               columns: {
@@ -724,6 +818,7 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Restaurant';
     };
+    readonly category: { readonly namespace: 'public' & NamespaceId; readonly model: 'Category' };
     readonly visit: { readonly namespace: 'public' & NamespaceId; readonly model: 'Visit' };
     readonly dish: { readonly namespace: 'public' & NamespaceId; readonly model: 'Dish' };
     readonly photo: { readonly namespace: 'public' & NamespaceId; readonly model: 'Photo' };
@@ -732,6 +827,45 @@ type ContractBase = Omit<
     readonly namespaces: {
       readonly public: {
         readonly models: {
+          readonly Category: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly icon: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly baseKind: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'category';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly icon: { readonly column: 'icon' };
+                readonly baseKind: { readonly column: 'baseKind' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
           readonly Dish: {
             readonly fields: {
               readonly id: {
@@ -861,6 +995,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly categoryId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly eventDate: {
                 readonly nullable: true;
                 readonly type: {
@@ -881,6 +1019,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly category: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Category';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['categoryId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly visit: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -904,6 +1053,7 @@ type ContractBase = Omit<
                 readonly lng: { readonly column: 'lng' };
                 readonly status: { readonly column: 'status' };
                 readonly kind: { readonly column: 'kind' };
+                readonly categoryId: { readonly column: 'categoryId' };
                 readonly eventDate: { readonly column: 'eventDate' };
                 readonly notes: { readonly column: 'notes' };
                 readonly createdAt: { readonly column: 'createdAt' };

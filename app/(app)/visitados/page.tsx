@@ -4,16 +4,21 @@ import { EmptyState } from "@/components/EmptyState";
 import { KindFilter } from "@/components/KindFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { formatDateRange } from "@/lib/format";
-import { KINDS, kindFromSlug } from "@/lib/places";
+import { typeFromSlug, typeOf, type PlaceType } from "@/lib/places";
+import { getPlaceTypes } from "@/lib/queries/categories";
 import { getVisitedRestaurants } from "@/lib/queries/restaurants";
 
 export const dynamic = "force-dynamic";
 
 export default async function VisitadosPage(props: PageProps<"/visitados">) {
   const { tipo } = await props.searchParams;
-  const kind = kindFromSlug(tipo);
-  const places = await getVisitedRestaurants(kind);
-  const what = kind ? KINDS[kind].plural.toLowerCase() : "lugares";
+  const types = await getPlaceTypes();
+  const type = typeFromSlug(types, tipo);
+  const places = (await getVisitedRestaurants(type)).map((place) => ({
+    ...place,
+    type: typeOf(types, place),
+  }));
+  const what = type ? type.plural.toLowerCase() : "lugares";
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
@@ -25,15 +30,13 @@ export default async function VisitadosPage(props: PageProps<"/visitados">) {
             : undefined
         }
       />
-      <KindFilter basePath="/visitados" active={kind} />
+      <KindFilter basePath="/visitados" types={types} active={type} />
 
       {places.length === 0 ? (
         <EmptyState
-          icon={kind ? KINDS[kind].icon : "📸"}
+          icon={type ? type.icon : "📸"}
           message={`Todavía no marcaron ${what} como visitados.`}
-          actionHref={
-            kind ? `/pendientes?tipo=${KINDS[kind].slug}` : "/pendientes"
-          }
+          actionHref={type ? `/pendientes?tipo=${type.slug}` : "/pendientes"}
           actionLabel="Ver pendientes"
         />
       ) : (
@@ -53,7 +56,9 @@ export default async function VisitadosPage(props: PageProps<"/visitados">) {
   );
 }
 
-type VisitedPlace = Awaited<ReturnType<typeof getVisitedRestaurants>>[number];
+type VisitedPlace = Awaited<
+  ReturnType<typeof getVisitedRestaurants>
+>[number] & { type: PlaceType };
 
 /** Frame shape for a card: the photo's own, kept within sane bounds. */
 function frameRatio(place: VisitedPlace) {
@@ -127,14 +132,14 @@ function VisitedCard({
             className="absolute inset-0 grid place-items-center text-4xl"
             aria-hidden
           >
-            {KINDS[place.kind].icon}
+            {place.type.icon}
           </span>
         )}
         <span
           className="absolute top-2 left-2 grid size-7 place-items-center rounded-full bg-white/90 text-sm shadow-sm"
-          title={KINDS[place.kind].label}
+          title={place.type.label}
         >
-          {KINDS[place.kind].icon}
+          {place.type.icon}
         </span>
       </div>
       <div className="flex flex-col gap-0.5 p-3">

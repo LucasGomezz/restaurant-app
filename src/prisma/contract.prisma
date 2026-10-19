@@ -22,6 +22,9 @@ model Restaurant {
   lng       Float
   status    RestaurantStatus
   kind      PlaceKind         @default(restaurant)
+  /// Optional custom type (e.g. "Bodega"); `kind` keeps its base behaviour.
+  categoryId Int?
+  category  Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   /// Events only: when it takes place (known before going).
   eventDate TimestamptzString?
   notes     String?
@@ -30,6 +33,21 @@ model Restaurant {
 
   @@index([status])
   @@index([kind])
+  @@index([categoryId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// Custom place types created from the app (e.g. "Bodega" 🍷). Each one behaves
+// like a built-in kind: dishes for restaurants, return date for trips...
+model Category {
+  id        Int               @id @default(autoincrement())
+  name      String            @unique
+  icon      String
+  baseKind  PlaceKind
+  createdAt TimestamptzString @default(now())
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.

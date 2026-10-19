@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PlaceForm } from "@/components/PlaceForm";
 import { updateRestaurant } from "@/lib/actions/restaurants";
 import { db } from "@/lib/db";
+import { getPlaceTypes } from "@/lib/queries/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -13,18 +14,22 @@ export default async function EditarRestaurantePage({ params }: Props) {
   const restaurantId = Number(id);
   if (!Number.isInteger(restaurantId)) notFound();
 
-  const restaurant = await db.orm.public.Restaurant.select(
-    "id",
-    "name",
-    "address",
-    "notes",
-    "kind",
-    "eventDate",
-    "lat",
-    "lng",
-  )
-    .where({ id: restaurantId })
-    .first();
+  const [restaurant, types] = await Promise.all([
+    db.orm.public.Restaurant.select(
+      "id",
+      "name",
+      "address",
+      "notes",
+      "kind",
+      "categoryId",
+      "eventDate",
+      "lat",
+      "lng",
+    )
+      .where({ id: restaurantId })
+      .first(),
+    getPlaceTypes(),
+  ]);
 
   if (!restaurant) notFound();
 
@@ -39,6 +44,7 @@ export default async function EditarRestaurantePage({ params }: Props) {
         <PlaceForm
           action={updateRestaurant.bind(null, restaurantId)}
           defaultValues={restaurant}
+          types={types}
           submitLabel="Guardar cambios"
           cancelHref={`/lugares/${restaurantId}`}
         />

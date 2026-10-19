@@ -1,22 +1,32 @@
 import Link from "next/link";
-import { KIND_ORDER, KINDS, type PlaceKind } from "@/lib/places";
+import type { PlaceType } from "@/lib/places";
 
 type KindFilterProps = {
   /** Page the chips link to, e.g. "/pendientes". */
   basePath: string;
-  active?: PlaceKind;
+  /** Built-in kinds and custom categories. */
+  types: PlaceType[];
+  active?: PlaceType;
   /** Icon-only chips on small screens (used over the map). */
   compact?: boolean;
 };
 
-export function KindFilter({ basePath, active, compact }: KindFilterProps) {
+const CHIP =
+  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium shadow-xs transition";
+
+export function KindFilter({
+  basePath,
+  types,
+  active,
+  compact,
+}: KindFilterProps) {
   const options = [
     { href: basePath, label: "Todos", icon: null, selected: !active },
-    ...KIND_ORDER.map((kind) => ({
-      href: `${basePath}?tipo=${KINDS[kind].slug}`,
-      label: KINDS[kind].plural,
-      icon: KINDS[kind].icon,
-      selected: active === kind,
+    ...types.map((type) => ({
+      href: `${basePath}?tipo=${type.slug}`,
+      label: type.plural,
+      icon: type.icon,
+      selected: active?.key === type.key,
     })),
   ];
 
@@ -28,7 +38,7 @@ export function KindFilter({ basePath, active, compact }: KindFilterProps) {
           href={option.href}
           aria-current={option.selected ? "page" : undefined}
           title={option.label}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium shadow-xs transition ${
+          className={`${CHIP} ${
             option.selected
               ? "border-brand-600 bg-brand-600 text-white"
               : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900"
@@ -40,6 +50,16 @@ export function KindFilter({ basePath, active, compact }: KindFilterProps) {
           </span>
         </Link>
       ))}
+      {!compact && (
+        <Link
+          href="/tipos"
+          title="Crear o editar tipos"
+          className={`${CHIP} border-dashed border-stone-300 bg-transparent text-stone-500 hover:border-stone-400 hover:text-stone-900`}
+        >
+          <span aria-hidden>＋</span>
+          Tipos
+        </Link>
+      )}
     </nav>
   );
 }
