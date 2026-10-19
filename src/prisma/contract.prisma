@@ -1,0 +1,91 @@
+// use prisma-next
+
+enum RestaurantStatus {
+  @@type("pg/text@1")
+  pending = "PENDING"
+  visited = "VISITED"
+}
+
+enum PlaceKind {
+  @@type("pg/text@1")
+  restaurant = "RESTAURANT"
+  trip       = "TRIP"
+  event      = "EVENT"
+}
+
+// Historical name: holds every place (restaurants, trips and events).
+model Restaurant {
+  id        Int              @id @default(autoincrement())
+  name      String
+  address   String?
+  lat       Float
+  lng       Float
+  status    RestaurantStatus
+  kind      PlaceKind         @default(restaurant)
+  /// Events only: when it takes place (known before going).
+  eventDate TimestamptzString?
+  notes     String?
+  createdAt TimestamptzString @default(now())
+  visit     Visit?
+
+  @@index([status])
+  @@index([kind])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+model Visit {
+  id             Int               @id @default(autoincrement())
+  restaurantId   Int               @unique
+  restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  visitDate      TimestamptzString
+  /// Trips only: return date (visitDate is the departure).
+  endDate        TimestamptzString?
+  description    String
+  coupleImageUrl String?
+  /// width / height of coupleImageUrl, so layouts can size frames before loading.
+  coupleImageRatio Float?
+  placeImageUrl  String?
+  /// width / height of placeImageUrl.
+  placeImageRatio  Float?
+  createdAt      TimestamptzString @default(now())
+  dishes         Dish[]
+  photos         Photo[]
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+model Dish {
+  id          Int     @id @default(autoincrement())
+  visitId     Int
+  visit       Visit   @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  imageUrl    String?
+
+  @@index([visitId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// Carousel photos of a visit.
+model Photo {
+  id        Int               @id @default(autoincrement())
+  visitId   Int
+  visit     Visit             @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  path      String
+  position  Int               @default(0)
+  createdAt TimestamptzString @default(now())
+
+  @@index([visitId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}

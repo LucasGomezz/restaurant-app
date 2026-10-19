@@ -1,0 +1,329 @@
+[
+  {
+    "id": "table.photo",
+    "label": "Create table \"photo\"",
+    "summary": "Creates table \"photo\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "photo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"photo\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"photo\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"photo\"",
+        "sql": "CREATE TABLE \"public\".\"photo\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"path\" text NOT NULL,\n  \"position\" int4 DEFAULT 0 NOT NULL,\n  \"visitId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"photo\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"photo\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.restaurant.eventDate",
+    "label": "Add column \"eventDate\" to \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "eventDate",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"eventDate\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "restaurant",
+          "eventDate"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"eventDate\"",
+        "sql": "ALTER TABLE \"public\".\"restaurant\" ADD COLUMN \"eventDate\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"eventDate\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "restaurant",
+          "eventDate"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.restaurant.kind",
+    "label": "Add column \"kind\" to \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "kind",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"kind\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "restaurant",
+          "kind"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"kind\"",
+        "sql": "ALTER TABLE \"public\".\"restaurant\" ADD COLUMN \"kind\" text DEFAULT 'RESTAURANT' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"kind\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "restaurant",
+          "kind"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.visit.endDate",
+    "label": "Add column \"endDate\" to \"visit\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "endDate",
+        "table": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"endDate\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "endDate"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"endDate\"",
+        "sql": "ALTER TABLE \"public\".\"visit\" ADD COLUMN \"endDate\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"endDate\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "endDate"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.restaurant.restaurant_kind_check_6aec14ff",
+    "label": "Add check constraint \"restaurant_kind_check_6aec14ff\" on \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "restaurant_kind_check_6aec14ff",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"restaurant_kind_check_6aec14ff\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "restaurant_kind_check_6aec14ff",
+          "public",
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"restaurant_kind_check_6aec14ff\"",
+        "sql": "ALTER TABLE \"public\".\"restaurant\" ADD CONSTRAINT \"restaurant_kind_check_6aec14ff\" CHECK (\"kind\" IN ('RESTAURANT', 'TRIP', 'EVENT'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"restaurant_kind_check_6aec14ff\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "restaurant_kind_check_6aec14ff",
+          "public",
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.photo.photo_visitId_idx_fcfcb8fb",
+    "label": "Create index \"photo_visitId_idx_fcfcb8fb\" on \"photo\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "photo_visitId_idx_fcfcb8fb",
+        "table": "photo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"photo_visitId_idx_fcfcb8fb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"photo_visitId_idx_fcfcb8fb\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"photo_visitId_idx_fcfcb8fb\"",
+        "sql": "CREATE INDEX \"photo_visitId_idx_fcfcb8fb\" ON \"public\".\"photo\" (\"visitId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"photo_visitId_idx_fcfcb8fb\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"photo_visitId_idx_fcfcb8fb\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.restaurant.restaurant_kind_idx_c9ca668f",
+    "label": "Create index \"restaurant_kind_idx_c9ca668f\" on \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "restaurant_kind_idx_c9ca668f",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"restaurant_kind_idx_c9ca668f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant_kind_idx_c9ca668f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"restaurant_kind_idx_c9ca668f\"",
+        "sql": "CREATE INDEX \"restaurant_kind_idx_c9ca668f\" ON \"public\".\"restaurant\" (\"kind\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"restaurant_kind_idx_c9ca668f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant_kind_idx_c9ca668f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.photo.photo_visitId_fkey",
+    "label": "Add foreign key \"photo_visitId_fkey\" on \"photo\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "photo_visitId_fkey",
+        "table": "photo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"photo_visitId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "photo_visitId_fkey",
+          "public",
+          "\"public\".\"photo\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"photo_visitId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"photo\"\nADD CONSTRAINT \"photo_visitId_fkey\"\nFOREIGN KEY (\"visitId\")\nREFERENCES \"public\".\"visit\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"photo_visitId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "photo_visitId_fkey",
+          "public",
+          "\"public\".\"photo\""
+        ]
+      }
+    ]
+  }
+]

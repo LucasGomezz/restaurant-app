@@ -1,0 +1,340 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.dish",
+    "label": "Create table \"dish\"",
+    "summary": "Creates table \"dish\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "dish"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"dish\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dish\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"dish\"",
+        "sql": "CREATE TABLE \"public\".\"dish\" (\n  \"description\" text,\n  \"id\" SERIAL NOT NULL,\n  \"imageUrl\" text,\n  \"name\" text NOT NULL,\n  \"visitId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"dish\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dish\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.restaurant",
+    "label": "Create table \"restaurant\"",
+    "summary": "Creates table \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"restaurant\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"restaurant\"",
+        "sql": "CREATE TABLE \"public\".\"restaurant\" (\n  \"address\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"lat\" float8 NOT NULL,\n  \"lng\" float8 NOT NULL,\n  \"name\" text NOT NULL,\n  \"notes\" text,\n  \"status\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"restaurant_status_check_c3347a5a\" CHECK (\"status\" IN ('PENDING', 'VISITED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"restaurant\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.visit",
+    "label": "Create table \"visit\"",
+    "summary": "Creates table \"visit\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"visit\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"visit\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"visit\"",
+        "sql": "CREATE TABLE \"public\".\"visit\" (\n  \"coupleImageUrl\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  \"visitDate\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"visit\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"visit\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.visit.visit_restaurantId_key",
+    "label": "Add unique constraint on \"visit\" (restaurantId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "visit_restaurantId_key",
+        "table": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"visit_restaurantId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "visit_restaurantId_key",
+          "public",
+          "\"public\".\"visit\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"visit_restaurantId_key\"",
+        "sql": "ALTER TABLE \"public\".\"visit\" ADD CONSTRAINT \"visit_restaurantId_key\" UNIQUE (\"restaurantId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"visit_restaurantId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "visit_restaurantId_key",
+          "public",
+          "\"public\".\"visit\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.dish.dish_visitId_idx_fcfcb8fb",
+    "label": "Create index \"dish_visitId_idx_fcfcb8fb\" on \"dish\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "dish_visitId_idx_fcfcb8fb",
+        "table": "dish"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"dish_visitId_idx_fcfcb8fb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dish_visitId_idx_fcfcb8fb\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"dish_visitId_idx_fcfcb8fb\"",
+        "sql": "CREATE INDEX \"dish_visitId_idx_fcfcb8fb\" ON \"public\".\"dish\" (\"visitId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"dish_visitId_idx_fcfcb8fb\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dish_visitId_idx_fcfcb8fb\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.restaurant.restaurant_status_idx_e98638ab",
+    "label": "Create index \"restaurant_status_idx_e98638ab\" on \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "restaurant_status_idx_e98638ab",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"restaurant_status_idx_e98638ab\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant_status_idx_e98638ab\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"restaurant_status_idx_e98638ab\"",
+        "sql": "CREATE INDEX \"restaurant_status_idx_e98638ab\" ON \"public\".\"restaurant\" (\"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"restaurant_status_idx_e98638ab\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant_status_idx_e98638ab\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.dish.dish_visitId_fkey",
+    "label": "Add foreign key \"dish_visitId_fkey\" on \"dish\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "dish_visitId_fkey",
+        "table": "dish"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"dish_visitId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "dish_visitId_fkey",
+          "public",
+          "\"public\".\"dish\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"dish_visitId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"dish\"\nADD CONSTRAINT \"dish_visitId_fkey\"\nFOREIGN KEY (\"visitId\")\nREFERENCES \"public\".\"visit\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"dish_visitId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "dish_visitId_fkey",
+          "public",
+          "\"public\".\"dish\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.visit.visit_restaurantId_fkey",
+    "label": "Add foreign key \"visit_restaurantId_fkey\" on \"visit\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "visit_restaurantId_fkey",
+        "table": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"visit_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "visit_restaurantId_fkey",
+          "public",
+          "\"public\".\"visit\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"visit_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"visit\"\nADD CONSTRAINT \"visit_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"visit_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "visit_restaurantId_fkey",
+          "public",
+          "\"public\".\"visit\""
+        ]
+      }
+    ]
+  }
+]

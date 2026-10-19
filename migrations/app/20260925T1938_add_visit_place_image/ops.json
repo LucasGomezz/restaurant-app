@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.visit.placeImageUrl",
+    "label": "Add column \"placeImageUrl\" to \"visit\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "placeImageUrl",
+        "table": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"placeImageUrl\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "placeImageUrl"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"placeImageUrl\"",
+        "sql": "ALTER TABLE \"public\".\"visit\" ADD COLUMN \"placeImageUrl\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"placeImageUrl\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "placeImageUrl"
+        ]
+      }
+    ]
+  }
+]

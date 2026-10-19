@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* Light theme only: the whole UI is designed on light surfaces. */
+:root {
+  color-scheme: light;
+  --background: #faf7f2;
+  --foreground: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-hand: var(--font-caveat);
+}
+
+/* Brand: aqua green. Previous terracotta, to switch back:
+   50 #fdf3ee · 100 #fbe3d6 · 200 #f6c4a9 · 500 #dc6a3a · 600 #c4532a · 700 #a24322 */
+@theme {
+  --color-brand-50: #effcfa;
+  --color-brand-100: #cdf5ef;
+  --color-brand-200: #9ee8dd;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d857b;
+  --color-brand-700: #0b6b63;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ---------- Reusable UI primitives ---------- */
+
+@utility card {
+  @apply rounded-2xl border border-stone-200/80 bg-white shadow-sm;
+}
+
+@utility field-label {
+  @apply text-sm font-medium text-stone-700;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-base text-stone-900 shadow-xs transition outline-none placeholder:text-stone-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15;
+}
+
+@utility input-file {
+  @apply w-full text-sm text-stone-500 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100;
+}
+
+@utility btn-primary {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-secondary {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-xs transition hover:border-stone-400 hover:bg-stone-50 focus-visible:ring-4 focus-visible:ring-stone-400/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-danger {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-red-500/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility link {
+  @apply font-medium text-brand-600 underline-offset-4 transition hover:text-brand-700 hover:underline;
+}
+
+/* Login photo mural: each column scrolls forever. Its content is doubled, so
+   moving by half its height lands on an identical frame and the loop is seamless. */
+@keyframes mural-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.mural-column {
+  /* Slow fallback; MuralSpeed sets the real duration from each column's height. */
+  animation: mural-scroll 600s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mural-column {
+    animation: none;
+  }
+}
+
+/* ---------- Photo viewer ---------- */
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.slide-in {
+  animation: slide-in 300ms ease-out;
+}
+
+/* Photo walls: each photo rises in as it scrolls into view. */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+}
+
+/* Trip album: polaroids drop onto the page, slightly turned. */
+@keyframes pin-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) rotate(-6deg) scale(1.06);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .reveal,
+  .pin-drop {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+
+  .pin-drop {
+    animation-name: pin-drop;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-in,
+  .reveal,
+  .pin-drop {
+    animation: none;
+  }
+}

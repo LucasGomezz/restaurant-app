@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.visit.coupleImageRatio",
+    "label": "Add column \"coupleImageRatio\" to \"visit\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "coupleImageRatio",
+        "table": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"coupleImageRatio\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "coupleImageRatio"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"coupleImageRatio\"",
+        "sql": "ALTER TABLE \"public\".\"visit\" ADD COLUMN \"coupleImageRatio\" float8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"coupleImageRatio\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "coupleImageRatio"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.visit.placeImageRatio",
+    "label": "Add column \"placeImageRatio\" to \"visit\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "placeImageRatio",
+        "table": "visit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"placeImageRatio\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "placeImageRatio"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"placeImageRatio\"",
+        "sql": "ALTER TABLE \"public\".\"visit\" ADD COLUMN \"placeImageRatio\" float8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"placeImageRatio\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "visit",
+          "placeImageRatio"
+        ]
+      }
+    ]
+  }
+]
