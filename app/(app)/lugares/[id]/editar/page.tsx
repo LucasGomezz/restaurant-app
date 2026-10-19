@@ -4,6 +4,7 @@ import { PlaceForm } from "@/components/PlaceForm";
 import { updateRestaurant } from "@/lib/actions/restaurants";
 import { db } from "@/lib/db";
 import { getPlaceTypes } from "@/lib/queries/categories";
+import { getKnownLocations } from "@/lib/queries/restaurants";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function EditarRestaurantePage({ params }: Props) {
   const restaurantId = Number(id);
   if (!Number.isInteger(restaurantId)) notFound();
 
-  const [restaurant, types] = await Promise.all([
+  const [restaurant, types, knownLocations] = await Promise.all([
     db.orm.public.Restaurant.select(
       "id",
       "name",
@@ -29,6 +30,7 @@ export default async function EditarRestaurantePage({ params }: Props) {
       .where({ id: restaurantId })
       .first(),
     getPlaceTypes(),
+    getKnownLocations(),
   ]);
 
   if (!restaurant) notFound();
@@ -45,6 +47,7 @@ export default async function EditarRestaurantePage({ params }: Props) {
           action={updateRestaurant.bind(null, restaurantId)}
           defaultValues={restaurant}
           types={types}
+          knownLocations={knownLocations}
           submitLabel="Guardar cambios"
           cancelHref={`/lugares/${restaurantId}`}
         />

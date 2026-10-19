@@ -1,11 +1,39 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import MapLoader from "@/components/MapLoader";
 
 type GeocodeResult = { displayName: string; lat: number; lng: number };
 
 type Position = { lat: number; lng: number };
+
+/** A place already added, offered so a new one can reuse its exact spot. */
+export type KnownLocation = Position & { name: string; address: string | null };
+
+type KnownSpot = Position & { address: string | null; names: string[] };
+
+function normalize(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/** Places at the same spot (~1 m) become one suggestion. */
+function toSpots(locations: KnownLocation[]): KnownSpot[] {
+  const spots = new Map<string, KnownSpot>();
+  for (const { name, address, lat, lng } of locations) {
+    const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+    const spot = spots.get(key);
+    if (spot) {
+      spot.names.push(name);
+      spot.address ??= address;
+    } else {
+      spots.set(key, { lat, lng, address, names: [name] });
+    }
+  }
+  return [...spots.values()];
+}
 
 type LocationPickerProps = {
   initial?: Position;
@@ -14,6 +42,8 @@ type LocationPickerProps = {
   onLocationChange: (value: Position) => void;
   /** Fired only when a search result is picked, to prefill the address field. */
   onAddressFound?: (address: string) => void;
+  /** Places already added; matching ones are suggested while typing. */
+  knownLocations?: KnownLocation[];
 };
 
 export function LocationPicker({
@@ -21,12 +51,28 @@ export function LocationPicker({
   initialAddress,
   onLocationChange,
   onAddressFound,
+  knownLocations = [],
 }: LocationPickerProps) {
   const [query, setQuery] = useState(initialAddress ?? "");
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [position, setPosition] = useState<Position | null>(initial ?? null);
   const [isPending, startTransition] = useTransition();
+  // Suggestions only while typing, not after picking something.
+  const [typing, setTyping] = useState(false);
+
+  const spots = useMemo(() => toSpots(knownLocations), [knownLocations]);
+  const term = normalize(query.trim());
+  const suggestions =
+    typing && term.length >= 2
+      ? spots
+          .filter((spot) =>
+            [...spot.names, spot.address ?? ""].some((text) =>
+              normalize(text).includes(term),
+            ),
+          )
+          .slice(0, 4)
+      : [];
 
   function search() {
     if (!query.trim()) return;
@@ -45,7 +91,9 @@ export function LocationPicker({
         const found: GeocodeResult[] = data.results ?? [];
         setResults(found);
         if (found.length === 0) {
-          setSearchError("No encontramos esa dirección. Probá con otra o tocá el mapa.");
+          setSearchError(
+            "No encontramos esa dirección. Probá con otra o tocá el mapa.",
+          );
         }
       } catch {
         setResults([]);
@@ -54,10 +102,20 @@ export function LocationPicker({
     });
   }
 
+  function selectSpot(spot: KnownSpot) {
+    setPosition({ lat: spot.lat, lng: spot.lng });
+    setQuery(spot.address ?? spot.names[0]);
+    setResults([]);
+    setTyping(false);
+    onLocationChange({ lat: spot.lat, lng: spot.lng });
+    if (spot.address) onAddressFound?.(spot.address);
+  }
+
   function selectResult(result: GeocodeResult) {
     setPosition({ lat: result.lat, lng: result.lng });
     setQuery(result.displayName);
     setResults([]);
+    setTyping(false);
     onLocationChange({ lat: result.lat, lng: result.lng });
     onAddressFound?.(result.displayName);
   }
@@ -79,7 +137,10 @@ export function LocationPicker({
             id="location-search"
             type="text"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setTyping(true);
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -98,6 +159,31 @@ export function LocationPicker({
             {isPending ? "Buscando..." : "Buscar"}
           </button>
         </div>
+        {suggestions.length > 0 && (
+          <div className="card overflow-hidden">
+            <p className="bg-stone-50 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-stone-500 uppercase">
+              Ya cargados
+            </p>
+            <ul className="flex flex-col divide-y divide-stone-100">
+              {suggestions.map((spot) => (
+                <li key={`${spot.lat},${spot.lng}`}>
+                  <button
+                    type="button"
+                    onClick={() => selectSpot(spot)}
+                    className="flex w-full cursor-pointer flex-col px-3.5 py-2.5 text-left transition hover:bg-brand-50"
+                  >
+                    <span className="text-sm font-medium text-stone-900">
+                      📍 {spot.address ?? spot.names[0]}
+                    </span>
+                    <span className="truncate text-xs text-stone-500">
+                      Usado en: {spot.names.join(", ")}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {results.length > 0 && (
           <ul className="card flex flex-col divide-y divide-stone-100 overflow-hidden">
             {results.map((result, index) => (

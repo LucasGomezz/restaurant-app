@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "leaflet/dist/leaflet.css";
 import "./leaflet-overrides.css";
+import { formatShortDate } from "@/lib/format";
 import type { RestaurantMarker } from "@/lib/types";
 
 const PIN_SIZE = 30;
@@ -52,6 +53,40 @@ function pinIcon(color: string, label?: string, icon?: string) {
   });
 }
 
+const VISITED_COLOR = "#059669";
+const PENDING_COLOR = "#f59e0b";
+/** A group mixing visited and pending places. */
+const MIXED_COLOR = "#0d857b";
+
+/** Places closer than ~1 m share a pin (e.g. two events at the same venue). */
+function locationKey({ lat, lng }: { lat: number; lng: number }) {
+  return `${lat.toFixed(5)},${lng.toFixed(5)}`;
+}
+
+function groupByLocation(restaurants: RestaurantMarker[]) {
+  const groups = new globalThis.Map<string, RestaurantMarker[]>();
+  for (const restaurant of restaurants) {
+    const key = locationKey(restaurant);
+    groups.set(key, [...(groups.get(key) ?? []), restaurant]);
+  }
+  return [...groups.entries()].map(([key, places]) => ({ key, places }));
+}
+
+function groupIcon(places: RestaurantMarker[]) {
+  const visited = places.filter((p) => p.status === "VISITED").length;
+  const color =
+    visited === places.length
+      ? VISITED_COLOR
+      : visited === 0
+        ? PENDING_COLOR
+        : MIXED_COLOR;
+  return pinIcon(
+    color,
+    `${places[0].name} +${places.length - 1}`,
+    `<b style="font-size:12px">${places.length}</b>`,
+  );
+}
+
 /** Both visit photos side by side; used in the hover tooltip and the popup. */
 function VisitPhotos({ restaurant }: { restaurant: RestaurantMarker }) {
   const photos = [
@@ -75,6 +110,24 @@ function VisitPhotos({ restaurant }: { restaurant: RestaurantMarker }) {
         />
       ))}
     </div>
+  );
+}
+
+/** Date, visit count and text of the latest visit. */
+function LatestVisit({ restaurant }: { restaurant: RestaurantMarker }) {
+  if (!restaurant.lastVisitText || !restaurant.date) return null;
+  const count = restaurant.visitCount ?? 1;
+
+  return (
+    <>
+      <p className="text-xs text-stone-500">
+        🗓 {formatShortDate(restaurant.date)}
+        {count > 1 && ` · 🔁 Fueron ${count} veces`}
+      </p>
+      <p className="line-clamp-2 text-xs text-stone-600">
+        {restaurant.lastVisitText}
+      </p>
+    </>
   );
 }
 
@@ -147,18 +200,20 @@ export default function Map({
   scrollWheelZoom = true,
 }: MapProps) {
   const router = useRouter();
-  const icons = useMemo(
+  const groups = useMemo(
     () =>
-      new globalThis.Map(
-        restaurants.map((r) => [
-          r.id,
-          pinIcon(
-            r.status === "VISITED" ? "#059669" : "#f59e0b",
-            r.name,
-            r.icon,
-          ),
-        ]),
-      ),
+      groupByLocation(restaurants).map(({ key, places }) => ({
+        key,
+        places,
+        icon:
+          places.length === 1
+            ? pinIcon(
+                places[0].status === "VISITED" ? VISITED_COLOR : PENDING_COLOR,
+                places[0].name,
+                places[0].icon,
+              )
+            : groupIcon(places),
+      })),
     [restaurants],
   );
 
@@ -191,62 +246,156 @@ export default function Map({
           <FollowSelected selected={selected} />
         </>
       )}
-      {restaurants.map((restaurant) => (
-        <Marker
-          key={restaurant.id}
-          position={[restaurant.lat, restaurant.lng]}
-          icon={icons.get(restaurant.id)}
-          eventHandlers={
-            CAN_HOVER
-              ? { click: () => router.push(`/lugares/${restaurant.id}`) }
-              : undefined
-          }
-        >
-          {CAN_HOVER && (restaurant.coverUrl || restaurant.placeUrl) && (
-            <Tooltip direction="top" className="photo-tooltip" opacity={1}>
-              <div className="flex w-64 flex-col gap-2">
-                <VisitPhotos restaurant={restaurant} />
-                <p className="px-1 text-sm font-semibold text-stone-900">
-                  {restaurant.name}
-                </p>
-              </div>
-            </Tooltip>
-          )}
-          {!CAN_HOVER && (
-            <Popup>
-              <div className="flex w-56 flex-col gap-1.5">
-                <VisitPhotos restaurant={restaurant} />
-                <span className="flex items-center gap-1.5">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
-                      restaurant.status === "VISITED"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
+      {groups.map(({ key, places, icon }) => {
+        if (places.length > 1) {
+          return <GroupMarker key={key} places={places} icon={icon} />;
+        }
+        const [restaurant] = places;
+        return (
+          <Marker
+            key={key}
+            position={[restaurant.lat, restaurant.lng]}
+            icon={icon}
+            eventHandlers={
+              CAN_HOVER
+                ? { click: () => router.push(`/lugares/${restaurant.id}`) }
+                : undefined
+            }
+          >
+            {CAN_HOVER &&
+              (restaurant.coverUrl ||
+                restaurant.placeUrl ||
+                restaurant.lastVisitText) && (
+                <Tooltip direction="top" className="photo-tooltip" opacity={1}>
+                  <div className="flex w-64 flex-col gap-2">
+                    <VisitPhotos restaurant={restaurant} />
+                    <div className="flex flex-col gap-0.5 px-1">
+                      <p className="text-sm font-semibold text-stone-900">
+                        {restaurant.name}
+                      </p>
+                      <LatestVisit restaurant={restaurant} />
+                    </div>
+                  </div>
+                </Tooltip>
+              )}
+            {!CAN_HOVER && (
+              <Popup>
+                <div className="flex w-56 flex-col gap-1.5">
+                  <VisitPhotos restaurant={restaurant} />
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
+                        restaurant.status === "VISITED"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {restaurant.status === "VISITED"
+                        ? "Visitado"
+                        : "Pendiente"}
+                    </span>
+                    <span className="text-xs text-stone-500">
+                      {restaurant.icon} {restaurant.typeLabel}
+                    </span>
+                  </span>
+                  <p className="text-base font-semibold text-stone-900">
+                    {restaurant.name}
+                  </p>
+                  <LatestVisit restaurant={restaurant} />
+                  {restaurant.address && (
+                    <p className="text-sm text-stone-500">
+                      {restaurant.address}
+                    </p>
+                  )}
+                  <Link
+                    href={`/lugares/${restaurant.id}`}
+                    className="link mt-1 text-sm"
                   >
-                    {restaurant.status === "VISITED" ? "Visitado" : "Pendiente"}
-                  </span>
-                  <span className="text-xs text-stone-500">
-                    {restaurant.icon} {restaurant.typeLabel}
-                  </span>
-                </span>
-                <p className="text-base font-semibold text-stone-900">
-                  {restaurant.name}
-                </p>
-                {restaurant.address && (
-                  <p className="text-sm text-stone-500">{restaurant.address}</p>
-                )}
-                <Link
-                  href={`/lugares/${restaurant.id}`}
-                  className="link mt-1 text-sm"
-                >
-                  Ver detalle →
-                </Link>
-              </div>
-            </Popup>
-          )}
-        </Marker>
-      ))}
+                    Ver detalle →
+                  </Link>
+                </div>
+              </Popup>
+            )}
+          </Marker>
+        );
+      })}
     </MapContainer>
+  );
+}
+
+/** One pin for several places at the same spot; tapping it lists them all. */
+function GroupMarker({
+  places,
+  icon,
+}: {
+  places: RestaurantMarker[];
+  icon: L.DivIcon;
+}) {
+  return (
+    <Marker position={[places[0].lat, places[0].lng]} icon={icon}>
+      <Popup>
+        <div className="flex w-60 flex-col gap-2">
+          <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
+            {places.length} en este lugar
+          </p>
+          {places[0].address && (
+            <p className="-mt-1 truncate text-xs text-stone-500">
+              {places[0].address}
+            </p>
+          )}
+          <ul className="flex max-h-72 flex-col divide-y divide-stone-100 overflow-y-auto">
+            {[...places]
+              .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
+              .map((place) => (
+                <li key={place.id}>
+                  <Link
+                    href={`/lugares/${place.id}`}
+                    className="flex items-center gap-2.5 py-2 text-stone-900 transition hover:text-brand-700"
+                  >
+                    {place.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={place.coverUrl}
+                        alt=""
+                        className="size-10 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span
+                        className="grid size-10 shrink-0 place-items-center rounded-lg bg-stone-100 text-lg"
+                        aria-hidden
+                      >
+                        {place.icon}
+                      </span>
+                    )}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-semibold">
+                        {place.name}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-stone-500">
+                        <span
+                          className="size-2 rounded-full"
+                          style={{
+                            background:
+                              place.status === "VISITED"
+                                ? VISITED_COLOR
+                                : PENDING_COLOR,
+                          }}
+                        />
+                        {place.status === "VISITED" ? "Visitado" : "Pendiente"}{" "}
+                        · {place.icon} {place.typeLabel}
+                      </span>
+                      {place.date && (
+                        <span className="text-[11px] text-stone-400">
+                          🗓 {formatShortDate(place.date)}
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </div>
+      </Popup>
+    </Marker>
   );
 }

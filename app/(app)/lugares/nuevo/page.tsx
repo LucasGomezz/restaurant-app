@@ -3,12 +3,16 @@ import { PlaceForm } from "@/components/PlaceForm";
 import { createRestaurant } from "@/lib/actions/restaurants";
 import { typeFromSlug } from "@/lib/places";
 import { getPlaceTypes } from "@/lib/queries/categories";
+import { getKnownLocations } from "@/lib/queries/restaurants";
 
 export default async function NuevoLugarPage(
   props: PageProps<"/lugares/nuevo">,
 ) {
   const { tipo } = await props.searchParams;
-  const types = await getPlaceTypes();
+  const [types, knownLocations] = await Promise.all([
+    getPlaceTypes(),
+    getKnownLocations(),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
@@ -22,6 +26,7 @@ export default async function NuevoLugarPage(
         <PlaceForm
           action={createRestaurant}
           types={types}
+          knownLocations={knownLocations}
           initialType={typeFromSlug(types, tipo)}
           submitLabel="Agregar"
           cancelHref="/pendientes"

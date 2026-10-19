@@ -49,6 +49,11 @@ async function typeFromForm(
   return { kind: isPlaceKind(value) ? value : "RESTAURANT", categoryId: null };
 }
 
+/** Refreshes a place page and the visit pages under it. */
+function refreshPlace(restaurantId: number) {
+  revalidatePath(`/lugares/${restaurantId}`, "layout");
+}
+
 function coord(formData: FormData, key: string): number {
   const raw = formData.get(key);
   if (typeof raw !== "string" || raw.trim() === "") return NaN;
@@ -129,15 +134,10 @@ export async function deleteRestaurant(id: number) {
   await requireUser();
 
   const restaurant = await db.orm.public.Restaurant.where({ id })
-    .include("visit", (v) => v.include("dishes").include("photos"))
+    .include("visits", (v) => v.include("dishes").include("photos"))
     .first();
 
-  const paths = [
-    restaurant?.visit?.coupleImageUrl ?? null,
-    restaurant?.visit?.placeImageUrl ?? null,
-    ...(restaurant?.visit?.dishes.map((dish) => dish.imageUrl) ?? []),
-    ...(restaurant?.visit?.photos.map((photo) => photo.path) ?? []),
-  ];
+  const paths = restaurant?.visits.flatMap(visitPhotoPaths) ?? [];
 
   await db.orm.public.Restaurant.where({ id }).delete();
   await deletePhotos(paths);
@@ -145,9 +145,25 @@ export async function deleteRestaurant(id: number) {
   redirect("/pendientes");
 }
 
-// ---------- Visit (mark as visited) ----------
+/** Every stored file of a visit: cover, place, dishes and carousel. */
+function visitPhotoPaths(visit: {
+  coupleImageUrl: string | null;
+  placeImageUrl: string | null;
+  dishes: { imageUrl: string | null }[];
+  photos: { path: string }[];
+}) {
+  return [
+    visit.coupleImageUrl,
+    visit.placeImageUrl,
+    ...visit.dishes.map((dish) => dish.imageUrl),
+    ...visit.photos.map((photo) => photo.path),
+  ];
+}
 
-export async function markVisited(
+// ---------- Visits (a place can be visited many times) ----------
+
+/** Adds a visit: the first one marks the place as visited. */
+export async function addVisit(
   restaurantId: number,
   _prevState: FormState,
   formData: FormData,
@@ -241,6 +257,33 @@ export async function markVisited(
   redirect(`/lugares/${restaurantId}`);
 }
 
+/** Removes a visit and its photos; with none left, the place is pending again. */
+export async function deleteVisit(visitId: number, restaurantId: number) {
+  await requireUser();
+
+  const visit = await db.orm.public.Visit.where({ id: visitId, restaurantId })
+    .include("dishes")
+    .include("photos")
+    .first();
+  if (!visit) return;
+
+  await db.transaction(async (tx) => {
+    await tx.orm.public.Visit.where({ id: visitId }).delete();
+    const remaining = await tx.orm.public.Visit.select("id")
+      .where({ restaurantId })
+      .first();
+    if (!remaining) {
+      await tx.orm.public.Restaurant.where({ id: restaurantId }).update({
+        status: "PENDING",
+      });
+    }
+  });
+  await deletePhotos(visitPhotoPaths(visit));
+
+  // Its own page is gone, so always land on the place.
+  redirect(`/lugares/${restaurantId}`);
+}
+
 export async function updateVisit(
   visitId: number,
   restaurantId: number,
@@ -305,7 +348,7 @@ export async function updateVisit(
 
   await deletePhotos(replacedPaths);
 
-  revalidatePath(`/lugares/${restaurantId}`);
+  refreshPlace(restaurantId);
 }
 
 // ---------- Carousel photos ----------
@@ -340,7 +383,7 @@ export async function addPhotos(
     paths.map((path, index) => ({ visitId, path, position: start + index })),
   );
 
-  revalidatePath(`/lugares/${restaurantId}`);
+  refreshPlace(restaurantId);
 }
 
 export async function deletePhoto(restaurantId: number, photoId: number) {
@@ -354,7 +397,7 @@ export async function deletePhoto(restaurantId: number, photoId: number) {
   await db.orm.public.Photo.where({ id: photoId }).delete();
   await deletePhotos([photo.path]);
 
-  revalidatePath(`/lugares/${restaurantId}`);
+  refreshPlace(restaurantId);
 }
 
 // ---------- Dishes ----------
@@ -382,7 +425,7 @@ export async function addDish(
     imageUrl,
   });
 
-  revalidatePath(`/lugares/${restaurantId}`);
+  refreshPlace(restaurantId);
 }
 
 export async function updateDish(
@@ -418,7 +461,7 @@ export async function updateDish(
     await deletePhotos([oldImageUrl]);
   }
 
-  revalidatePath(`/lugares/${restaurantId}`);
+  refreshPlace(restaurantId);
 }
 
 export async function deleteDish(dishId: number, restaurantId: number) {
@@ -434,5 +477,5 @@ export async function deleteDish(dishId: number, restaurantId: number) {
     await deletePhotos([dish.imageUrl]);
   }
 
-  revalidatePath(`/lugares/${restaurantId}`);
+  refreshPlace(restaurantId);
 }

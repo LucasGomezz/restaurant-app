@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'5a63566a1dd521307545005e9be6dfde8c8aa783f4161c953227220b8d97a959'>;
+  StorageHashBase<'121180e63ca79a0b4c9033f6f67fcd699f994083b139a7fe1980ca7c85838a7e'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -776,8 +776,15 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['restaurantId'] }];
-              indexes: readonly [];
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'visit_restaurantId_idx_cf3ee7d0';
+                  readonly prefix: 'visit_restaurantId_idx';
+                  readonly columns: readonly ['restaurantId'];
+                  readonly unique: false;
+                },
+              ];
               foreignKeys: readonly [
                 {
                   readonly source: {
@@ -1030,12 +1037,12 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
-              readonly visit: {
+              readonly visits: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'Visit';
                 };
-                readonly cardinality: '1:1';
+                readonly cardinality: '1:N';
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['restaurantId'];

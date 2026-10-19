@@ -1,28 +1,15 @@
-import { AdaptiveImage } from "@/components/AdaptiveImage";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AddPhotosForm } from "@/components/AddPhotosForm";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import { DishForm } from "@/components/DishForm";
 import MapLoader from "@/components/MapLoader";
-import { PhotoGallery } from "@/components/PhotoGallery";
-import { TripAlbum } from "@/components/TripAlbum";
 import { VisitHeader } from "@/components/VisitHeader";
 import { VisitForm } from "@/components/VisitForm";
+import { VisitSections } from "@/components/VisitSections";
+import { addVisit, deleteRestaurant } from "@/lib/actions/restaurants";
 import { formatDate, formatDateRange, toDateInputValue } from "@/lib/format";
 import { typeOf } from "@/lib/places";
 import { getPlaceTypes } from "@/lib/queries/categories";
 import { getRestaurantDetail } from "@/lib/queries/restaurants";
-import {
-  deleteRestaurant,
-  markVisited,
-  updateVisit,
-  addDish,
-  updateDish,
-  deleteDish,
-  addPhotos,
-  deletePhoto,
-} from "@/lib/actions/restaurants";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +25,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
     getPlaceTypes(),
   ]);
   if (!data) notFound();
-  const { restaurant, visit } = data;
+  const { restaurant, visits } = data;
+  // The header shows the latest visit; older ones are listed below it.
+  const [visit = null, ...olderVisits] = visits;
   const isVisited = restaurant.status === "VISITED";
   const kind = typeOf(types, restaurant);
   const backHref = `${isVisited ? "/visitados" : "/pendientes"}?tipo=${kind.slug}`;
@@ -114,6 +103,11 @@ export default async function RestaurantDetailPage({ params }: Props) {
             <div className="flex flex-col gap-2 border-t border-stone-100 pt-4">
               <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
                 {formatDateRange(visit.visitDate, visit.endDate)}
+                {visits.length > 1 && (
+                  <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 tracking-normal text-brand-700 normal-case">
+                    🔁 Fueron {visits.length} veces
+                  </span>
+                )}
               </p>
               <p className="text-base leading-relaxed whitespace-pre-line text-stone-700">
                 {visit.description}
@@ -160,7 +154,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
             </Link>
             <form action={deleteRestaurant.bind(null, restaurant.id)}>
               <ConfirmButton
-                message={`¿Eliminar "${restaurant.name}"? Se borran también la visita y todas las fotos.`}
+                message={`¿Eliminar "${restaurant.name}"? Se borran también las visitas y todas las fotos.`}
               >
                 Eliminar
               </ConfirmButton>
@@ -183,7 +177,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
             </p>
           </div>
           <VisitForm
-            action={markVisited.bind(null, restaurant.id)}
+            action={addVisit.bind(null, restaurant.id)}
             kind={restaurant.kind}
             suggestedDate={
               restaurant.eventDate
@@ -194,163 +188,99 @@ export default async function RestaurantDetailPage({ params }: Props) {
         </section>
       )}
 
-      {/* ---------- Visited: edit the visit, then its dishes ---------- */}
+      {/* ---------- Visited: the latest visit, then going back again ---------- */}
       {visit && (
         <>
+          <VisitSections
+            visit={visit}
+            restaurant={restaurant}
+            isOnlyVisit={visits.length === 1}
+          />
+
           <details className="group card">
-            <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium text-stone-700 transition select-none hover:text-stone-900">
-              <span className="inline-block transition group-open:rotate-90">
-                ›
-              </span>{" "}
-              Editar visita
+            <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
+              🔁 Volvimos: agregar otra visita
             </summary>
             <div className="border-t border-stone-200 p-5">
               <VisitForm
-                action={updateVisit.bind(null, visit.id, restaurant.id)}
+                action={addVisit.bind(null, restaurant.id)}
                 kind={restaurant.kind}
-                defaultValues={{
-                  visitDate: toDateInputValue(visit.visitDate),
-                  endDate: visit.endDate
-                    ? toDateInputValue(visit.endDate)
-                    : null,
-                  description: visit.description,
-                }}
-                submitLabel="Guardar cambios"
+                submitLabel="Guardar visita"
               />
             </div>
           </details>
+        </>
+      )}
 
-          <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-stone-900">
-              {restaurant.kind === "TRIP" ? "Fotos del viaje" : "Fotos"}{" "}
-              <span className="font-normal text-stone-400">
-                {visit.photos.length > 0 && `(${visit.photos.length})`}
-              </span>
-            </h2>
-            {visit.photos.length > 0 && restaurant.kind === "TRIP" ? (
-              <TripAlbum
-                photos={visit.photos}
-                title={restaurant.name}
-                subtitle={formatDateRange(visit.visitDate, visit.endDate)}
-                onDelete={deletePhoto.bind(null, restaurant.id)}
-              />
-            ) : visit.photos.length > 0 ? (
-              <PhotoGallery
-                photos={visit.photos}
-                title={restaurant.name}
-                onDelete={deletePhoto.bind(null, restaurant.id)}
-              />
-            ) : (
-              <p className="text-sm text-stone-500">Todavía no hay fotos.</p>
-            )}
-            <details className="group rounded-2xl border border-dashed border-stone-300 bg-white/60 transition open:bg-white">
-              <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
-                + Agregar fotos
-              </summary>
-              <div className="border-t border-stone-200 p-4">
-                <AddPhotosForm
-                  action={addPhotos.bind(null, visit.id, restaurant.id)}
-                />
-              </div>
-            </details>
-          </section>
-
-          {(restaurant.kind === "RESTAURANT" || visit.dishes.length > 0) && (
-            <section className="flex flex-col gap-4">
-              <h2 className="text-lg font-semibold text-stone-900">
-                Platos{" "}
-                <span className="font-normal text-stone-400">
-                  {visit.dishes.length > 0 && `(${visit.dishes.length})`}
-                </span>
-              </h2>
-
-              {visit.dishes.length === 0 && (
-                <p className="text-sm text-stone-500">
-                  Todavía no cargaste platos.
-                </p>
-              )}
-
-              <ul className="flex flex-col gap-3">
-                {visit.dishes.map((dish) => (
-                  <li key={dish.id} className="card flex gap-4 p-4">
-                    <div className="relative aspect-[9/16] w-24 shrink-0 self-start overflow-hidden rounded-xl bg-gradient-to-br from-brand-50 to-stone-100 sm:w-32">
-                      {dish.imageDisplayUrl ? (
-                        <AdaptiveImage
-                          src={dish.imageDisplayUrl}
-                          alt={dish.name}
-                          className="object-cover"
-                          sizes="128px"
+      {/* ---------- Older visits, newest first ---------- */}
+      {olderVisits.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold text-stone-900">
+            Visitas anteriores{" "}
+            <span className="font-normal text-stone-400">
+              ({olderVisits.length})
+            </span>
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {olderVisits.map((older) => {
+              const thumb =
+                older.coverUrl ?? older.placeUrl ?? older.photos[0]?.url;
+              return (
+                <li key={older.id}>
+                  <Link
+                    href={`/lugares/${restaurant.id}/visitas/${older.id}`}
+                    className="card group flex items-center gap-4 p-3 pr-4 transition hover:border-brand-200 hover:shadow-md"
+                  >
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-brand-50 to-stone-100">
+                      {thumb ? (
+                        // Signed URL thumbnail; a plain <img> keeps it simple.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={thumb}
+                          alt=""
+                          className="size-full object-cover"
                         />
                       ) : (
                         <span
-                          className="absolute inset-0 grid place-items-center text-3xl"
+                          className="absolute inset-0 grid place-items-center text-2xl"
                           aria-hidden
                         >
-                          🍴
+                          {kind.icon}
                         </span>
                       )}
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <p className="font-semibold text-stone-900">
-                        {dish.name}
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <p className="text-sm font-semibold text-stone-900">
+                        {formatDateRange(older.visitDate, older.endDate)}
                       </p>
-                      {dish.description && (
-                        <p className="text-sm whitespace-pre-line text-stone-600">
-                          {dish.description}
+                      <p className="line-clamp-2 text-sm text-stone-500">
+                        {older.description}
+                      </p>
+                      {(older.photos.length > 0 || older.dishes.length > 0) && (
+                        <p className="text-xs text-stone-400">
+                          {[
+                            older.photos.length > 0 &&
+                              `📷 ${older.photos.length}`,
+                            older.dishes.length > 0 &&
+                              `🍴 ${older.dishes.length}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </p>
                       )}
-                      <div className="mt-auto flex flex-wrap items-start gap-x-4 gap-y-2 pt-2">
-                        <details className="group w-full">
-                          <summary className="cursor-pointer list-none text-sm font-medium text-brand-600 transition select-none hover:text-brand-700">
-                            Editar plato
-                          </summary>
-                          <div className="mt-3 flex flex-col gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3.5">
-                            <DishForm
-                              action={updateDish.bind(
-                                null,
-                                dish.id,
-                                restaurant.id,
-                              )}
-                              defaultValues={dish}
-                              submitLabel="Guardar"
-                            />
-                            <form
-                              action={deleteDish.bind(
-                                null,
-                                dish.id,
-                                restaurant.id,
-                              )}
-                              className="border-t border-stone-200 pt-3"
-                            >
-                              <ConfirmButton
-                                message={`¿Eliminar el plato "${dish.name}"?`}
-                                className="cursor-pointer text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
-                              >
-                                Eliminar plato
-                              </ConfirmButton>
-                            </form>
-                          </div>
-                        </details>
-                      </div>
                     </div>
-                  </li>
-                ))}
-              </ul>
-
-              <details className="group rounded-2xl border border-dashed border-stone-300 bg-white/60 transition open:bg-white">
-                <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
-                  + Agregar plato
-                </summary>
-                <div className="border-t border-stone-200 p-4">
-                  <DishForm
-                    action={addDish.bind(null, visit.id, restaurant.id)}
-                    submitLabel="Agregar plato"
-                  />
-                </div>
-              </details>
-            </section>
-          )}
-        </>
+                    <span
+                      className="text-xl text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-brand-600"
+                      aria-hidden
+                    >
+                      ›
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
     </div>
   );

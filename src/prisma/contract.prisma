@@ -29,7 +29,7 @@ model Restaurant {
   eventDate TimestamptzString?
   notes     String?
   createdAt TimestamptzString @default(now())
-  visit     Visit?
+  visits    Visit[]
 
   @@index([status])
   @@index([kind])
@@ -56,7 +56,7 @@ model Category {
 
 model Visit {
   id             Int               @id @default(autoincrement())
-  restaurantId   Int               @unique
+  restaurantId   Int
   restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   visitDate      TimestamptzString
   /// Trips only: return date (visitDate is the departure).
@@ -71,6 +71,8 @@ model Visit {
   createdAt      TimestamptzString @default(now())
   dishes         Dish[]
   photos         Photo[]
+
+  @@index([restaurantId])
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.

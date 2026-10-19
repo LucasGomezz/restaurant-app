@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import { FormError } from "@/components/FormError";
 import type { FormState } from "@/lib/actions/restaurants";
 import { prepareUpload } from "@/lib/compress-image";
@@ -34,6 +34,8 @@ export function VisitForm({
     },
     undefined,
   );
+  // Unique per form: a place page can show several visit forms at once.
+  const uid = useId();
   const [dishCount, setDishCount] = useState(1);
   const isEditing = Boolean(defaultValues);
   const isTrip = kind === "TRIP";
@@ -42,11 +44,11 @@ export function VisitForm({
     <form action={formAction} className="flex flex-col gap-5">
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="visitDate" className="field-label">
+          <label htmlFor={`${uid}-visitDate`} className="field-label">
             {isTrip ? "Ida" : kind === "EVENT" ? "Fecha" : "Fecha de la visita"}
           </label>
           <input
-            id="visitDate"
+            id={`${uid}-visitDate`}
             name="visitDate"
             type="date"
             required
@@ -56,11 +58,11 @@ export function VisitForm({
         </div>
         {isTrip && (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="endDate" className="field-label">
+            <label htmlFor={`${uid}-endDate`} className="field-label">
               Vuelta
             </label>
             <input
-              id="endDate"
+              id={`${uid}-endDate`}
               name="endDate"
               type="date"
               defaultValue={defaultValues?.endDate ?? undefined}
@@ -71,11 +73,11 @@ export function VisitForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="description" className="field-label">
+        <label htmlFor={`${uid}-description`} className="field-label">
           {isTrip ? "¿Cómo fue el viaje?" : "¿Cómo fue la experiencia?"}
         </label>
         <textarea
-          id="description"
+          id={`${uid}-description`}
           name="description"
           rows={4}
           required
@@ -86,11 +88,11 @@ export function VisitForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="coupleImage" className="field-label">
+          <label htmlFor={`${uid}-coupleImage`} className="field-label">
             {isEditing ? "Cambiar foto de los dos" : "Foto de los dos"}
           </label>
           <input
-            id="coupleImage"
+            id={`${uid}-coupleImage`}
             name="coupleImage"
             type="file"
             accept="image/*"
@@ -99,11 +101,11 @@ export function VisitForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="placeImage" className="field-label">
+          <label htmlFor={`${uid}-placeImage`} className="field-label">
             {isEditing ? "Cambiar foto del lugar" : "Foto del lugar"}
           </label>
           <input
-            id="placeImage"
+            id={`${uid}-placeImage`}
             name="placeImage"
             type="file"
             accept="image/*"
@@ -114,14 +116,14 @@ export function VisitForm({
 
       {!isEditing && (
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="photos" className="field-label">
+          <label htmlFor={`${uid}-photos`} className="field-label">
             Más fotos{" "}
             <span className="font-normal text-stone-400">
               (carrusel, podés elegir varias)
             </span>
           </label>
           <input
-            id="photos"
+            id={`${uid}-photos`}
             name="photos"
             type="file"
             accept="image/*"

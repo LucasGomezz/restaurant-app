@@ -11,6 +11,19 @@ export function formatDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
 }
 
+const shortDateFormatter = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "10 may 2026": for tight spots like map popups. */
+export function formatShortDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : shortDateFormatter.format(date);
+}
+
 /** `YYYY-MM-DD` for `<input type="date">` default values. */
 export function toDateInputValue(value: string): string {
   return value.slice(0, 10);

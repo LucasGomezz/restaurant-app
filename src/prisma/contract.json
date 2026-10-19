@@ -390,8 +390,8 @@
                   "namespace": "public"
                 }
               },
-              "visit": {
-                "cardinality": "1:1",
+              "visits": {
+                "cardinality": "1:N",
                 "on": {
                   "localFields": [
                     "id"
@@ -1073,19 +1073,22 @@
                   }
                 }
               ],
-              "indexes": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "restaurantId"
+                  ],
+                  "name": "visit_restaurantId_idx_cf3ee7d0",
+                  "prefix": "visit_restaurantId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
                 ]
               },
-              "uniques": [
-                {
-                  "columns": [
-                    "restaurantId"
-                  ]
-                }
-              ]
+              "uniques": []
             }
           },
           "valueSet": {
@@ -1110,7 +1113,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "5a63566a1dd521307545005e9be6dfde8c8aa783f4161c953227220b8d97a959"
+    "storageHash": "121180e63ca79a0b4c9033f6f67fcd699f994083b139a7fe1980ca7c85838a7e"
   },
   "capabilities": {
     "postgres": {

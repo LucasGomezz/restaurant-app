@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { CategoryEditor } from "@/components/CategoryEditor";
-import { LocationPicker } from "@/components/LocationPicker";
+import {
+  LocationPicker,
+  type KnownLocation,
+} from "@/components/LocationPicker";
 import { FormError } from "@/components/FormError";
 import { createCategory } from "@/lib/actions/categories";
 import type { FormState } from "@/lib/actions/restaurants";
@@ -31,6 +34,8 @@ type PlaceFormProps = {
   types: PlaceType[];
   /** Preselected type for a new place (from `?tipo=`). */
   initialType?: PlaceType;
+  /** Locations already used, suggested in the location search. */
+  knownLocations?: KnownLocation[];
   submitLabel: string;
   cancelHref: string;
 };
@@ -40,6 +45,7 @@ export function PlaceForm({
   defaultValues,
   types: initialTypes,
   initialType,
+  knownLocations,
   submitLabel,
   cancelHref,
 }: PlaceFormProps) {
@@ -155,6 +161,7 @@ export function PlaceForm({
         initialAddress={address}
         onLocationChange={(value) => setCoords(value)}
         onAddressFound={(value) => setAddress(value)}
+        knownLocations={knownLocations}
       />
       <input type="hidden" name="lat" value={coords?.lat ?? ""} />
       <input type="hidden" name="lng" value={coords?.lng ?? ""} />

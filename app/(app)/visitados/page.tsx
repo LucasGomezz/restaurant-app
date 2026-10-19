@@ -146,8 +146,16 @@ function VisitedCard({
         <p className="truncate text-sm font-semibold text-stone-900">
           {place.name}
         </p>
-        <p className="text-xs text-stone-500">
+        <p className="flex items-center gap-1.5 text-xs text-stone-500">
           {formatDateRange(place.visitDate, place.endDate)}
+          {place.visitCount > 1 && (
+            <span
+              className="rounded-full bg-brand-50 px-1.5 font-semibold text-brand-700"
+              title={`Fueron ${place.visitCount} veces`}
+            >
+              🔁 {place.visitCount}
+            </span>
+          )}
         </p>
       </div>
     </Link>
