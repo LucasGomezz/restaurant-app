@@ -133,13 +133,15 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 
 ### Fase 1 — Base multiusuario
 - [x] Cerrar el diseño (este documento)
-- [ ] Proyecto de Supabase de desarrollo separado + `npm install` + `.env` local
-- [ ] Login real: registro, Google, recuperar contraseña, perfil con username
+- [x] Proyecto de Supabase de desarrollo separado + `npm install` + `.env` local
+- [x] Login real: registro, recuperar contraseña, perfil con username (`/bienvenida`)
+- [ ] Login con Google
+- [ ] SMTP propio (Resend) para los emails de Auth
 - [ ] Esquema nuevo (`contract.prisma`) + migraciones
 - [ ] Script que migra los datos actuales a un usuario y una carpeta compartida
 - [ ] Módulo de permisos `lib/access.ts` con tests
 - [ ] Capa de fotos con miniaturas y cuota
-- [ ] Sacar el mural de fotos privadas del login
+- [x] Sacar el mural de fotos privadas del login
 
 ### Fase 2 — Carpetas y amigos
 - [ ] Crear / editar carpetas, carpetas de viaje con fechas

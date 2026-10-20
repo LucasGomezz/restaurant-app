@@ -1,8 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedEmail } from "@/lib/auth/allowlist";
 
-const PUBLIC_PATHS = ["/login"];
+/** Pages for signed-out visitors; signed-in users are sent home instead. */
+const GUEST_PATHS = ["/login", "/registro", "/recuperar"];
+/** Email-link landings: open to everyone, they create the session. */
+const PUBLIC_PREFIXES = ["/auth/"];
+
+/** Redirect that keeps the session cookies getUser() may have just refreshed. */
+function redirectTo(request: NextRequest, response: NextResponse, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  const redirect = NextResponse.redirect(url);
+  for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+  return redirect;
+}
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -34,20 +46,19 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicPath = PUBLIC_PATHS.includes(request.nextUrl.pathname);
-  // A signed-in account outside the allowlist is treated as signed out.
-  const allowed = Boolean(user) && isAllowedEmail(user?.email);
+  const { pathname } = request.nextUrl;
+  const isGuestPath = GUEST_PATHS.includes(pathname);
+  const isPublicPath =
+    isGuestPath || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
-  if (!allowed && !isPublicPath) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  // Only an optimistic check: pages and actions verify the session (and the
+  // profile) again close to the data, see lib/auth/session.ts.
+  if (!user && !isPublicPath) {
+    return redirectTo(request, response, "/login");
   }
 
-  if (allowed && isPublicPath) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  if (user && isGuestPath) {
+    return redirectTo(request, response, "/");
   }
 
   return response;

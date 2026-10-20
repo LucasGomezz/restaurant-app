@@ -16,6 +16,10 @@
       "model": "Photo",
       "namespace": "public"
     },
+    "profile": {
+      "model": "Profile",
+      "namespace": "public"
+    },
     "restaurant": {
       "model": "Restaurant",
       "namespace": "public"
@@ -280,6 +284,57 @@
               },
               "namespaceId": "public",
               "table": "photo"
+            }
+          },
+          "Profile": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "displayName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "displayName": {
+                  "column": "displayName"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "username": {
+                  "column": "username"
+                }
+              },
+              "namespaceId": "public",
+              "table": "profile"
             }
           },
           "Restaurant": {
@@ -627,6 +682,11 @@
               "namespaceId": "public",
               "tableName": "photo"
             },
+            "profile": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "profile"
+            },
             "restaurant": {
               "kind": "rls",
               "namespaceId": "public",
@@ -846,6 +906,49 @@
                 ]
               },
               "uniques": []
+            },
+            "profile": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "displayName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false,
+                  "typeRef": "AuthUserId"
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "username"
+                  ]
+                }
+              ]
             },
             "restaurant": {
               "checks": [
@@ -1113,7 +1216,14 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "121180e63ca79a0b4c9033f6f67fcd699f994083b139a7fe1980ca7c85838a7e"
+    "storageHash": "fd4977cbaf2b60e69bf6feab66b088a4b7cc3f839268a9a664d04f15c04d9f84",
+    "types": {
+      "AuthUserId": {
+        "codecId": "pg/uuid@1",
+        "kind": "codec-instance",
+        "nativeType": "uuid"
+      }
+    }
   },
   "capabilities": {
     "postgres": {

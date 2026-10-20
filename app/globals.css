@@ -70,29 +70,6 @@ summary::-webkit-details-marker {
   @apply font-medium text-brand-600 underline-offset-4 transition hover:text-brand-700 hover:underline;
 }
 
-/* Login photo mural: each column scrolls forever. Its content is doubled, so
-   moving by half its height lands on an identical frame and the loop is seamless. */
-@keyframes mural-scroll {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-50%);
-  }
-}
-
-.mural-column {
-  /* Slow fallback; MuralSpeed sets the real duration from each column's height. */
-  animation: mural-scroll 600s linear infinite;
-  will-change: transform;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mural-column {
-    animation: none;
-  }
-}
-
 /* ---------- Photo viewer ---------- */
 
 @keyframes slide-in {

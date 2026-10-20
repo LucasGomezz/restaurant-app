@@ -1,5 +1,10 @@
 // use prisma-next
 
+types {
+  /// Supabase Auth user id (auth.users.id).
+  AuthUserId = Uuid
+}
+
 enum RestaurantStatus {
   @@type("pg/text@1")
   pending = "PENDING"
@@ -104,6 +109,20 @@ model Photo {
   createdAt TimestamptzString @default(now())
 
   @@index([visitId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// Public identity of a Supabase Auth user. Created on first sign-in
+// (/bienvenida); the app requires one before letting the user in.
+model Profile {
+  id          AuthUserId        @id
+  /// Unique handle used to find friends, e.g. "lucas.gomez".
+  username    String            @unique
+  displayName String
+  createdAt   TimestamptzString @default(now())
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.

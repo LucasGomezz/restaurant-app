@@ -14,7 +14,7 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function NavBar() {
+export function NavBar({ username }: { username: string }) {
   const pathname = usePathname();
 
   return (
@@ -57,9 +57,16 @@ export function NavBar() {
           <span aria-hidden>+</span>
           <span>Agregar</span>
         </Link>
-        <form action={logout}>
+        <form action={logout} className="flex items-center">
+          <span
+            className="hidden max-w-32 truncate pl-1 text-sm text-stone-500 md:inline"
+            title={`@${username}`}
+          >
+            @{username}
+          </span>
           <button
             type="submit"
+            title="Cerrar sesión"
             className="cursor-pointer rounded-lg px-2 py-1.5 text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
           >
             Salir

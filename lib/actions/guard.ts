@@ -1,16 +1,16 @@
 import "server-only";
-import { isAllowedEmail } from "@/lib/auth/allowlist";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser, getProfile } from "@/lib/auth/session";
 
+/**
+ * For Server Actions: throws unless the caller is signed in and has finished
+ * setting up their profile. Pages use `requireProfile()`, which redirects.
+ */
 export async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
 
-  if (!user || !isAllowedEmail(user.email)) {
-    throw new Error("Unauthorized");
-  }
+  const profile = await getProfile(user.id);
+  if (!profile) throw new Error("Unauthorized");
 
-  return user;
+  return { user, profile };
 }

@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedEmail } from "@/lib/auth/allowlist";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser, getProfile } from "@/lib/auth/session";
 
 type NominatimResult = {
   display_name: string;
@@ -9,11 +8,8 @@ type NominatimResult = {
 };
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || !isAllowedEmail(user.email)) {
+  const user = await getCurrentUser();
+  if (!user || !(await getProfile(user.id))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
