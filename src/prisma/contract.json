@@ -28,6 +28,10 @@
       "model": "FolderPlace",
       "namespace": "public"
     },
+    "friendship": {
+      "model": "Friendship",
+      "namespace": "public"
+    },
     "photo": {
       "model": "Photo",
       "namespace": "public"
@@ -63,6 +67,19 @@
               {
                 "name": "viewer",
                 "value": "VIEWER"
+              }
+            ]
+          },
+          "FriendshipStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "pending",
+                "value": "PENDING"
+              },
+              {
+                "name": "accepted",
+                "value": "ACCEPTED"
               }
             ]
           },
@@ -658,6 +675,114 @@
               "table": "folderPlace"
             }
           },
+          "Friendship": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "requestedBy": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "FriendshipStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "userHigh": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "userLow": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "high": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "userHigh"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Profile",
+                  "namespace": "public"
+                }
+              },
+              "low": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "userLow"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Profile",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "requestedBy": {
+                  "column": "requestedBy"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "userHigh": {
+                  "column": "userHigh"
+                },
+                "userLow": {
+                  "column": "userLow"
+                }
+              },
+              "namespaceId": "public",
+              "table": "friendship"
+            }
+          },
           "Photo": {
             "fields": {
               "createdAt": {
@@ -779,6 +904,36 @@
                 },
                 "to": {
                   "model": "Category",
+                  "namespace": "public"
+                }
+              },
+              "friendsHigh": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userHigh"
+                  ]
+                },
+                "to": {
+                  "model": "Friendship",
+                  "namespace": "public"
+                }
+              },
+              "friendsLow": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userLow"
+                  ]
+                },
+                "to": {
+                  "model": "Friendship",
                   "namespace": "public"
                 }
               },
@@ -1231,6 +1386,11 @@
               "kind": "rls",
               "namespaceId": "public",
               "tableName": "folderPlace"
+            },
+            "friendship": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "friendship"
             },
             "photo": {
               "kind": "rls",
@@ -1778,6 +1938,131 @@
                 }
               ]
             },
+            "friendship": {
+              "checks": [
+                {
+                  "expression": "\"status\" IN ('PENDING', 'ACCEPTED')",
+                  "name": "friendship_status_check_f0e5c74c",
+                  "prefix": "friendship_status_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "requestedBy": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false,
+                  "typeRef": "AuthUserId"
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "FriendshipStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "userHigh": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false,
+                  "typeRef": "AuthUserId"
+                },
+                "userLow": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false,
+                  "typeRef": "AuthUserId"
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "userLow"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "friendship"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "profile"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "userHigh"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "friendship"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "profile"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "userHigh"
+                  ],
+                  "name": "friendship_userHigh_idx_70c53c29",
+                  "prefix": "friendship_userHigh_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "userLow"
+                  ],
+                  "name": "friendship_userLow_idx_b7762932",
+                  "prefix": "friendship_userLow_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "userLow",
+                    "userHigh"
+                  ]
+                }
+              ]
+            },
             "photo": {
               "columns": {
                 "createdAt": {
@@ -2181,6 +2466,13 @@
                 "VIEWER"
               ]
             },
+            "FriendshipStatus": {
+              "kind": "valueSet",
+              "values": [
+                "PENDING",
+                "ACCEPTED"
+              ]
+            },
             "PlaceKind": {
               "kind": "valueSet",
               "values": [
@@ -2202,7 +2494,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "92378754b671ac8dfa7c968602a7298c50d43ee231d0222b8b5d575bcd033208",
+    "storageHash": "7f48e262111a6ccb406b4ae0af112a615e27e27d05cf182bfc410d443aafaeab",
     "types": {
       "AuthUserId": {
         "codecId": "pg/uuid@1",

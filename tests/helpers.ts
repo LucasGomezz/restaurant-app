@@ -6,6 +6,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+// React's own encoder for Server Action arguments (what the browser sends),
+// so actions taking FormData can be called too.
+// @ts-expect-error -- Next's vendored copy ships without type declarations.
+import { encodeReply } from "next/dist/compiled/react-server-dom-turbopack/client.edge.js";
 import { db } from "../src/prisma/db.ts";
 
 export { db };
@@ -62,8 +66,9 @@ export async function page(session: Session, path: string) {
 }
 
 /**
- * Calls a Server Action directly with any arguments, the way a forged request
- * would. `path` must be a page that uses the action (and was compiled).
+ * Calls a Server Action directly with any arguments (FormData included), the
+ * way a forged request would. `path` must be a page that uses the action
+ * (and was compiled).
  */
 export async function callAction(
   session: Session,
@@ -71,14 +76,18 @@ export async function callAction(
   exportedName: string,
   args: unknown[],
 ) {
+  const body: string | FormData = await encodeReply(args);
   const response = await request(session, path, {
     method: "POST",
     headers: {
       accept: "text/x-component",
-      "content-type": "text/plain;charset=UTF-8",
       "next-action": actionId(exportedName),
+      // A FormData body sets its own multipart content type.
+      ...(typeof body === "string"
+        ? { "content-type": "text/plain;charset=UTF-8" }
+        : {}),
     },
-    body: JSON.stringify(args),
+    body,
   });
   await response.text();
   return response.status;
@@ -153,4 +162,9 @@ export async function seedPlace(
     status,
     kind: "RESTAURANT",
   });
+}
+
+/** Same ordering as friendPair in lib/access.ts (which is server-only). */
+export function friendPair(a: string, b: string) {
+  return a < b ? { userLow: a, userHigh: b } : { userLow: b, userHigh: a };
 }

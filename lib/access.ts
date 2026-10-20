@@ -16,7 +16,8 @@ import { db } from "@/lib/db";
  *   it. Removing a place from a folder: the place's owner or the folder OWNER.
  * - A custom category belongs to whoever created it.
  * - Ownerless rows (from before accounts existed) are visible to nobody.
- * - Being friends gives access to nothing.
+ * - Being friends gives access to nothing: it only lets a folder OWNER add
+ *   a friend as a member directly, without sending a link.
  *
  * The ids that Server Actions receive come from the browser and can be
  * forged, so the `assert*` helpers resolve everything from the database,
@@ -173,6 +174,21 @@ export async function assertCanEditPhoto(userId: string, photoId: number) {
   if (!photo) throw new AccessDeniedError();
   const { placeId } = await assertCanEditVisit(userId, photo.visitId);
   return { photoId: photo.id, visitId: photo.visitId, placeId };
+}
+
+// ---------- Friends ----------
+
+/** A friendship is stored once per pair, ordered, so (a, b) and (b, a) match. */
+export function friendPair(a: string, b: string) {
+  return a < b ? { userLow: a, userHigh: b } : { userLow: b, userHigh: a };
+}
+
+export async function areFriends(a: string, b: string) {
+  if (a === b || !isUuid(b)) return false;
+  const friendship = await db.orm.public.Friendship.select("id")
+    .where({ ...friendPair(a, b), status: "ACCEPTED" })
+    .first();
+  return Boolean(friendship);
 }
 
 // ---------- Categories ----------

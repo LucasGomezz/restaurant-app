@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'92378754b671ac8dfa7c968602a7298c50d43ee231d0222b8b5d575bcd033208'>;
+  StorageHashBase<'7f48e262111a6ccb406b4ae0af112a615e27e27d05cf182bfc410d443aafaeab'>;
 export type ExecutionHash =
   ExecutionHashBase<'21858fe2c94c1ae8c88f2b65f03e610d19e3adf3beca595209c7fbdf996f33d4'>;
 export type ProfileHash =
@@ -285,6 +285,14 @@ export type FieldOutputTypes = {
       readonly placeId: CodecTypes['pg/int4@1']['output'];
       readonly addedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly Friendship: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly userLow: CodecTypes['pg/uuid@1']['output'];
+      readonly userHigh: CodecTypes['pg/uuid@1']['output'];
+      readonly status: 'PENDING' | 'ACCEPTED';
+      readonly requestedBy: CodecTypes['pg/uuid@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly Photo: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly visitId: CodecTypes['pg/int4@1']['output'];
@@ -371,6 +379,14 @@ export type FieldInputTypes = {
       readonly folderId: CodecTypes['pg/uuid@1']['input'];
       readonly placeId: CodecTypes['pg/int4@1']['input'];
       readonly addedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly Friendship: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly userLow: CodecTypes['pg/uuid@1']['input'];
+      readonly userHigh: CodecTypes['pg/uuid@1']['input'];
+      readonly status: 'PENDING' | 'ACCEPTED';
+      readonly requestedBy: CodecTypes['pg/uuid@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Photo: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -459,6 +475,14 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly placeId: CodecTypes['pg/int4@1']['output'];
     };
+    readonly friendship: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly requestedBy: CodecTypes['pg/uuid@1']['output'];
+      readonly status: 'PENDING' | 'ACCEPTED';
+      readonly userHigh: CodecTypes['pg/uuid@1']['output'];
+      readonly userLow: CodecTypes['pg/uuid@1']['output'];
+    };
     readonly photo: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -545,6 +569,14 @@ export type StorageColumnInputTypes = {
       readonly folderId: CodecTypes['pg/uuid@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly placeId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly friendship: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly requestedBy: CodecTypes['pg/uuid@1']['input'];
+      readonly status: 'PENDING' | 'ACCEPTED';
+      readonly userHigh: CodecTypes['pg/uuid@1']['input'];
+      readonly userLow: CodecTypes['pg/uuid@1']['input'];
     };
     readonly photo: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -981,6 +1013,90 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly friendship: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly userLow: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'AuthUserId';
+                };
+                readonly userHigh: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'AuthUserId';
+                };
+                readonly status: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly requestedBy: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'AuthUserId';
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['userLow', 'userHigh'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'friendship_userHigh_idx_70c53c29';
+                  readonly prefix: 'friendship_userHigh_idx';
+                  readonly columns: readonly ['userHigh'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'friendship_userLow_idx_b7762932';
+                  readonly prefix: 'friendship_userLow_idx';
+                  readonly columns: readonly ['userLow'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'friendship';
+                    readonly columns: readonly ['userLow'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'profile';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'friendship';
+                    readonly columns: readonly ['userHigh'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'profile';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly photo: {
               columns: {
                 readonly id: {
@@ -1290,6 +1406,10 @@ type ContractBase = Omit<
               readonly kind: 'valueSet';
               readonly values: readonly ['OWNER', 'EDITOR', 'VIEWER'];
             };
+            readonly FriendshipStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['PENDING', 'ACCEPTED'];
+            };
             readonly PlaceKind: {
               readonly kind: 'valueSet';
               readonly values: readonly ['RESTAURANT', 'TRIP', 'EVENT'];
@@ -1344,6 +1464,10 @@ type ContractBase = Omit<
     readonly folderInvite: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'FolderInvite';
+    };
+    readonly friendship: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'Friendship';
     };
   };
   readonly domain: {
@@ -1716,6 +1840,73 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly Friendship: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly userLow: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly userHigh: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly requestedBy: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly high: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Profile';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['userHigh'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly low: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Profile';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['userLow'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'friendship';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly userLow: { readonly column: 'userLow' };
+                readonly userHigh: { readonly column: 'userHigh' };
+                readonly status: { readonly column: 'status' };
+                readonly requestedBy: { readonly column: 'requestedBy' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
           readonly Photo: {
             readonly fields: {
               readonly id: {
@@ -1799,6 +1990,28 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['ownerId'];
+                };
+              };
+              readonly friendsHigh: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Friendship';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userHigh'];
+                };
+              };
+              readonly friendsLow: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Friendship';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userLow'];
                 };
               };
               readonly memberships: {
@@ -2073,6 +2286,13 @@ type ContractBase = Omit<
               { readonly name: 'owner'; readonly value: 'OWNER' },
               { readonly name: 'editor'; readonly value: 'EDITOR' },
               { readonly name: 'viewer'; readonly value: 'VIEWER' },
+            ];
+          };
+          readonly FriendshipStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'pending'; readonly value: 'PENDING' },
+              { readonly name: 'accepted'; readonly value: 'ACCEPTED' },
             ];
           };
           readonly PlaceKind: {

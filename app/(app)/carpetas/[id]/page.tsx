@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { EmptyState } from "@/components/EmptyState";
 import { InvitePanel } from "@/components/InvitePanel";
@@ -15,9 +16,11 @@ import {
   removePlaceFromFolder,
   revokeInvite,
 } from "@/lib/actions/folders";
+import { addFriendToFolder } from "@/lib/actions/friends";
 import { formatDate, formatDateRange } from "@/lib/format";
 import { getPlaceTypes } from "@/lib/queries/categories";
 import { getFolderDetail, getPlacesToAdd } from "@/lib/queries/folders";
+import { getFriendsToAdd } from "@/lib/queries/friends";
 import { getRestaurantMarkers } from "@/lib/queries/restaurants";
 import { siteOrigin } from "@/lib/site";
 
@@ -38,9 +41,10 @@ export default async function CarpetaPage(props: PageProps<"/carpetas/[id]">) {
   const isOwner = role === "OWNER";
   const canAdd = hasRole(role, "EDITOR");
   const types = await getPlaceTypes();
-  const [places, placesToAdd] = await Promise.all([
+  const [places, placesToAdd, friendsToAdd] = await Promise.all([
     getRestaurantMarkers(types, undefined, folder.id),
     canAdd ? getPlacesToAdd(folder.id) : [],
+    isOwner ? getFriendsToAdd(folder.id) : [],
   ]);
   const inviteLink = invite ? `${await siteOrigin()}/invitacion/${invite.id}` : null;
 
@@ -237,12 +241,7 @@ export default async function CarpetaPage(props: PageProps<"/carpetas/[id]">) {
               key={member.userId}
               className="flex flex-wrap items-center gap-3 px-4 py-3"
             >
-              <span
-                className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-semibold text-white"
-                aria-hidden
-              >
-                {member.user?.displayName.slice(0, 1).toUpperCase() ?? "?"}
-              </span>
+              <Avatar name={member.user?.displayName ?? ""} />
               <div className="flex min-w-0 flex-1 flex-col">
                 <p className="truncate text-sm font-semibold text-stone-900">
                   {member.user?.displayName ?? "Usuario"}
@@ -293,6 +292,43 @@ export default async function CarpetaPage(props: PageProps<"/carpetas/[id]">) {
       {isOwner && (
         <section className="card flex flex-col gap-3 p-5">
           <h2 className="text-lg font-semibold text-stone-900">Invitar</h2>
+          {friendsToAdd.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-stone-600">Sumá a tus amigos directamente:</p>
+              <ul className="flex flex-col divide-y divide-stone-100 rounded-xl border border-stone-200">
+                {friendsToAdd.map((friend) => (
+                  <li key={friend.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                    <Avatar name={friend.displayName} />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <p className="truncate text-sm font-semibold text-stone-900">
+                        {friend.displayName}
+                      </p>
+                      <p className="truncate text-xs text-stone-500">@{friend.username}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <form action={addFriendToFolder.bind(null, folder.id, friend.id, "EDITOR")}>
+                        <button
+                          type="submit"
+                          className="cursor-pointer rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-brand-700"
+                        >
+                          + Puede editar
+                        </button>
+                      </form>
+                      <form action={addFriendToFolder.bind(null, folder.id, friend.id, "VIEWER")}>
+                        <button
+                          type="submit"
+                          className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
+                        >
+                          + Solo ver
+                        </button>
+                      </form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="pt-2 text-sm text-stone-600">O mandá un link:</p>
+            </div>
+          )}
           <InvitePanel
             link={inviteLink}
             role={invite && invite.role !== "OWNER" ? invite.role : null}

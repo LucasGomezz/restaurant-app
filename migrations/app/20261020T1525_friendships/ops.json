@@ -1,0 +1,284 @@
+[
+  {
+    "id": "table.friendship",
+    "label": "Create table \"friendship\"",
+    "summary": "Creates table \"friendship\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"friendship\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"friendship\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"friendship\"",
+        "sql": "CREATE TABLE \"public\".\"friendship\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"requestedBy\" \"uuid\" NOT NULL,\n  \"status\" text NOT NULL,\n  \"userHigh\" \"uuid\" NOT NULL,\n  \"userLow\" \"uuid\" NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"friendship_status_check_f0e5c74c\" CHECK (\"status\" IN ('PENDING', 'ACCEPTED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"friendship\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"friendship\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.friendship.friendship_userLow_userHigh_key",
+    "label": "Add unique constraint on \"friendship\" (userLow, userHigh)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "friendship_userLow_userHigh_key",
+        "table": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"friendship_userLow_userHigh_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "friendship_userLow_userHigh_key",
+          "public",
+          "\"public\".\"friendship\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"friendship_userLow_userHigh_key\"",
+        "sql": "ALTER TABLE \"public\".\"friendship\" ADD CONSTRAINT \"friendship_userLow_userHigh_key\" UNIQUE (\"userLow\", \"userHigh\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"friendship_userLow_userHigh_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "friendship_userLow_userHigh_key",
+          "public",
+          "\"public\".\"friendship\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.friendship.friendship_userHigh_idx_70c53c29",
+    "label": "Create index \"friendship_userHigh_idx_70c53c29\" on \"friendship\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "friendship_userHigh_idx_70c53c29",
+        "table": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"friendship_userHigh_idx_70c53c29\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"friendship_userHigh_idx_70c53c29\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"friendship_userHigh_idx_70c53c29\"",
+        "sql": "CREATE INDEX \"friendship_userHigh_idx_70c53c29\" ON \"public\".\"friendship\" (\"userHigh\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"friendship_userHigh_idx_70c53c29\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"friendship_userHigh_idx_70c53c29\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.friendship.friendship_userLow_idx_b7762932",
+    "label": "Create index \"friendship_userLow_idx_b7762932\" on \"friendship\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "friendship_userLow_idx_b7762932",
+        "table": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"friendship_userLow_idx_b7762932\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"friendship_userLow_idx_b7762932\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"friendship_userLow_idx_b7762932\"",
+        "sql": "CREATE INDEX \"friendship_userLow_idx_b7762932\" ON \"public\".\"friendship\" (\"userLow\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"friendship_userLow_idx_b7762932\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"friendship_userLow_idx_b7762932\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.friendship.friendship_userLow_fkey",
+    "label": "Add foreign key \"friendship_userLow_fkey\" on \"friendship\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "friendship_userLow_fkey",
+        "table": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"friendship_userLow_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "friendship_userLow_fkey",
+          "public",
+          "\"public\".\"friendship\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"friendship_userLow_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"friendship\"\nADD CONSTRAINT \"friendship_userLow_fkey\"\nFOREIGN KEY (\"userLow\")\nREFERENCES \"public\".\"profile\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"friendship_userLow_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "friendship_userLow_fkey",
+          "public",
+          "\"public\".\"friendship\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.friendship.friendship_userHigh_fkey",
+    "label": "Add foreign key \"friendship_userHigh_fkey\" on \"friendship\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "friendship_userHigh_fkey",
+        "table": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"friendship_userHigh_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "friendship_userHigh_fkey",
+          "public",
+          "\"public\".\"friendship\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"friendship_userHigh_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"friendship\"\nADD CONSTRAINT \"friendship_userHigh_fkey\"\nFOREIGN KEY (\"userHigh\")\nREFERENCES \"public\".\"profile\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"friendship_userHigh_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "friendship_userHigh_fkey",
+          "public",
+          "\"public\".\"friendship\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.friendship",
+    "label": "Enable row-level security on \"friendship\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "friendship"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"friendship\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "friendship"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"friendship\"",
+        "sql": "ALTER TABLE \"public\".\"friendship\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"friendship\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "friendship"
+        ]
+      }
+    ]
+  }
+]

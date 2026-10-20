@@ -21,12 +21,23 @@ function createDb() {
   return postgres<Contract>({ contractJson, pg: pool });
 }
 
+type Db = ReturnType<typeof createDb>;
+
 // `next dev` re-evaluates this module on every reload: reuse the client so
-// each reload doesn't leak a new pool.
+// each reload doesn't leak a new pool. A new contract (after
+// `prisma contract emit`) gets a new client, and the old one is closed.
+const contractHash = contractJson.storage.storageHash;
 const globalForDb = globalThis as typeof globalThis & {
-  prismaDb?: ReturnType<typeof createDb>;
+  prismaClient?: { contractHash: string; db: Db };
 };
 
-export const db = globalForDb.prismaDb ?? createDb();
+function sharedDb(): Db {
+  const cached = globalForDb.prismaClient;
+  if (cached?.contractHash === contractHash) return cached.db;
+  void cached?.db.close().catch(() => {});
+  const db = createDb();
+  globalForDb.prismaClient = { contractHash, db };
+  return db;
+}
 
-if (process.env['NODE_ENV'] !== 'production') globalForDb.prismaDb = db;
+export const db = process.env['NODE_ENV'] === 'production' ? createDb() : sharedDb();

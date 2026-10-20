@@ -162,7 +162,10 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 - [x] Invitación por link (`/invitacion/<id>`, vence a los 7 días), roles editar / solo ver
 - [x] Agregar lugares desde la carpeta o desde el lugar; crear un lugar directo en una carpeta
 - [x] `npm run test:e2e`: aislamiento entre cuentas y reglas de carpetas (34 casos)
-- [ ] Solicitudes de amistad, invitar amigos a carpetas
+- [x] Amigos (`/amigos`): solicitud por @usuario exacto (sin búsqueda parcial),
+      aceptar / rechazar / cancelar / quitar; aviso en el menú
+- [x] El dueño de una carpeta suma amigos directo, eligiendo el rol
+- [ ] Bloquear usuarios (hoy quien rechazás puede volver a pedirte amistad)
 - [ ] Transferir la carpeta a otro miembro (hoy el dueño no puede salir, solo borrarla)
 
 ### Fase 3 — Mapa nuevo

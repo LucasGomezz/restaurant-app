@@ -21,6 +21,12 @@ enum FolderRole {
   viewer = "VIEWER"
 }
 
+enum FriendshipStatus {
+  @@type("pg/text@1")
+  pending  = "PENDING"
+  accepted = "ACCEPTED"
+}
+
 enum PlaceKind {
   @@type("pg/text@1")
   restaurant = "RESTAURANT"
@@ -147,6 +153,8 @@ model Profile {
   places      Restaurant[]
   categories  Category[]
   memberships FolderMember[]
+  friendsLow  Friendship[]      @relation("FriendshipLow")
+  friendsHigh Friendship[]      @relation("FriendshipHigh")
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.
@@ -219,6 +227,28 @@ model FolderInvite {
   createdAt TimestamptzString @default(now())
 
   @@index([folderId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// Two users who are friends (or one asked the other). Stored once per pair,
+// ordered (userLow < userHigh), so the pair can't appear twice. Being friends
+// gives no access to anything: it only makes inviting to folders easier.
+model Friendship {
+  id          Int               @id @default(autoincrement())
+  userLow     AuthUserId
+  low         Profile           @relation("FriendshipLow", fields: [userLow], references: [id], onDelete: Cascade)
+  userHigh    AuthUserId
+  high        Profile           @relation("FriendshipHigh", fields: [userHigh], references: [id], onDelete: Cascade)
+  status      FriendshipStatus
+  /// Who sent the request (one of the two).
+  requestedBy AuthUserId
+  createdAt   TimestamptzString @default(now())
+
+  @@unique([userLow, userHigh])
+  @@index([userHigh])
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.

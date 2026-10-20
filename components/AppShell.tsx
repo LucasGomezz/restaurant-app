@@ -18,6 +18,7 @@ const SECTIONS = [
   { href: "/pendientes", label: "Pendientes", icon: "📍" },
   { href: "/visitados", label: "Visitados", icon: "📸" },
   { href: "/tipos", label: "Tipos", icon: "🏷️" },
+  { href: "/amigos", label: "Amigos", icon: "👥" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -32,14 +33,18 @@ function isActive(pathname: string, href: string) {
 export function AppShell({
   username,
   folders,
+  friendRequests,
   initiallyCollapsed,
   children,
 }: {
   username: string;
   folders: SidebarFolder[];
+  /** Friend requests waiting for an answer: a badge on "Amigos". */
+  friendRequests: number;
   initiallyCollapsed: boolean;
   children: ReactNode;
 }) {
+  const badges = { "/amigos": friendRequests };
   const [collapsed, setCollapsed] = useState(initiallyCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -66,10 +71,17 @@ export function AppShell({
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            aria-label="Abrir menú"
-            className="grid size-9 cursor-pointer place-items-center rounded-lg text-xl text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 md:hidden"
+            aria-label={
+              friendRequests > 0
+                ? "Abrir menú (tenés solicitudes de amistad)"
+                : "Abrir menú"
+            }
+            className="relative grid size-9 cursor-pointer place-items-center rounded-lg text-xl text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 md:hidden"
           >
             ☰
+            {friendRequests > 0 && (
+              <span className="absolute top-1 right-1 size-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+            )}
           </button>
           <Link
             href="/"
@@ -113,7 +125,7 @@ export function AppShell({
           }`}
         >
           <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-            <SidebarNav folders={folders} collapsed={collapsed} />
+            <SidebarNav folders={folders} badges={badges} collapsed={collapsed} />
           </div>
           <button
             type="button"
@@ -163,6 +175,7 @@ export function AppShell({
             <div className="min-h-0 flex-1 overflow-y-auto">
               <SidebarNav
                 folders={folders}
+                badges={badges}
                 collapsed={false}
                 onNavigate={() => setDrawerOpen(false)}
               />
@@ -177,10 +190,13 @@ export function AppShell({
 /** Sections and folders; `collapsed` shows icons only (with tooltips). */
 function SidebarNav({
   folders,
+  badges,
   collapsed,
   onNavigate,
 }: {
   folders: SidebarFolder[];
+  /** Counts shown next to a section, by its href. */
+  badges: Record<string, number>;
   collapsed: boolean;
   onNavigate?: () => void;
 }) {
@@ -200,6 +216,7 @@ function SidebarNav({
       <ul className="flex flex-col gap-0.5">
         {SECTIONS.map((section) => {
           const active = isActive(pathname, section.href);
+          const badge = badges[section.href] ?? 0;
           return (
             <li key={section.href}>
               <Link
@@ -209,10 +226,25 @@ function SidebarNav({
                 title={collapsed ? section.label : undefined}
                 className={item(active)}
               >
-                <span aria-hidden className="w-5 shrink-0 text-center text-base">
+                <span aria-hidden className="relative w-5 shrink-0 text-center text-base">
                   {section.icon}
+                  {collapsed && badge > 0 && (
+                    <span className="absolute -top-0.5 -right-1 size-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
                 </span>
-                {!collapsed && <span className="truncate">{section.label}</span>}
+                {!collapsed && (
+                  <span className="min-w-0 flex-1 truncate">{section.label}</span>
+                )}
+                {!collapsed && badge > 0 && (
+                  <span className="rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                    {badge}
+                  </span>
+                )}
+                {badge > 0 && (
+                  <span className="sr-only">
+                    {` (${badge} ${badge === 1 ? "solicitud pendiente" : "solicitudes pendientes"})`}
+                  </span>
+                )}
               </Link>
             </li>
           );
