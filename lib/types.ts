@@ -16,11 +16,6 @@ export type RestaurantMarker = {
   /** Latest visit date, or the event's date while pending. */
   date?: string | null;
   visitCount?: number;
-  /** What they wrote about the latest visit. */
-  lastVisitText?: string | null;
-  /** Signed URLs of the visit photos, when the restaurant was visited. */
-  coverUrl?: string | null;
-  placeUrl?: string | null;
   /** Created by the signed-in user (not shared with them through a folder). */
   isOwn?: boolean;
 };

@@ -254,3 +254,17 @@ model Friendship {
   // the app connects as the table owner, which bypasses RLS.
   @@rls
 }
+
+// Address searches already answered, so the same query doesn't hit the
+// geocoding provider again (lib/geocoding.ts). Not user data.
+model GeocodeCache {
+  /// "<provider>:<normalized query>".
+  key       String            @id
+  /// JSON array of { displayName, lat, lng }.
+  results   String
+  createdAt TimestamptzString @default(now())
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}

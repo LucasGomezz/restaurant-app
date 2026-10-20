@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "src/prisma/contract.json",
     "src/prisma/contract.d.ts",
     "migrations/snapshots/**",
+    // Copied from node_modules by scripts/copy-maplibre-worker.mjs.
+    "public/maplibre/**",
     // Synced by `prisma skills sync` — vendored agent skill docs/scripts.
     ".agents/**",
     ".claude/skills/prisma-8/**",

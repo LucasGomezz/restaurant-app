@@ -1,11 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser, getProfile } from "@/lib/auth/session";
-
-type NominatimResult = {
-  display_name: string;
-  lat: string;
-  lon: string;
-};
+import { geocode } from "@/lib/geocoding";
 
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
@@ -17,33 +12,16 @@ export async function GET(request: NextRequest) {
   if (!query) {
     return NextResponse.json({ results: [] });
   }
+  if (query.length > 200) {
+    return NextResponse.json({ error: "La búsqueda es muy larga." }, { status: 400 });
+  }
 
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", query);
-  url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("limit", "5");
-
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "restaurantes-app/1.0 (uso personal)",
-      "Accept-Language": "es",
-    },
-  });
-
-  if (!response.ok) {
+  try {
+    return NextResponse.json({ results: await geocode(query) });
+  } catch {
     return NextResponse.json(
       { error: "No se pudo buscar la dirección." },
       { status: 502 },
     );
   }
-
-  const data = (await response.json()) as NominatimResult[];
-
-  return NextResponse.json({
-    results: data.map((item) => ({
-      displayName: item.display_name,
-      lat: Number(item.lat),
-      lng: Number(item.lon),
-    })),
-  });
 }

@@ -32,6 +32,10 @@
       "model": "Friendship",
       "namespace": "public"
     },
+    "geocodeCache": {
+      "model": "GeocodeCache",
+      "namespace": "public"
+    },
     "photo": {
       "model": "Photo",
       "namespace": "public"
@@ -783,6 +787,47 @@
               "table": "friendship"
             }
           },
+          "GeocodeCache": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "key": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "results": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "key": {
+                  "column": "key"
+                },
+                "results": {
+                  "column": "results"
+                }
+              },
+              "namespaceId": "public",
+              "table": "geocodeCache"
+            }
+          },
           "Photo": {
             "fields": {
               "createdAt": {
@@ -1391,6 +1436,11 @@
               "kind": "rls",
               "namespaceId": "public",
               "tableName": "friendship"
+            },
+            "geocodeCache": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "geocodeCache"
             },
             "photo": {
               "kind": "rls",
@@ -2063,6 +2113,37 @@
                 }
               ]
             },
+            "geocodeCache": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "key": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "results": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "key"
+                ]
+              },
+              "uniques": []
+            },
             "photo": {
               "columns": {
                 "createdAt": {
@@ -2494,7 +2575,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "7f48e262111a6ccb406b4ae0af112a615e27e27d05cf182bfc410d443aafaeab",
+    "storageHash": "eea6188ffc3cb12749012d9dfbf73fcfbceeadf37ec203f6f809a11b90820638",
     "types": {
       "AuthUserId": {
         "codecId": "pg/uuid@1",

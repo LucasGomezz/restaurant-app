@@ -66,33 +66,11 @@ export async function getRestaurantMarkers(
       "categoryId",
       "eventDate",
     )
-    .include("visits", (v) =>
-      v.select(
-        "id",
-        "visitDate",
-        "description",
-        "coupleImageUrl",
-        "placeImageUrl",
-      ),
-    )
+    // Dates only: photos and text load when a pin is opened (getPlacePreview).
+    .include("visits", (v) => v.select("id", "visitDate"))
     .all();
 
-  // The map previews the latest visit only: its photos, date and text.
-  const places = rows.map((row) => {
-    const [latest] = newestFirst(row.visits);
-    return {
-      row,
-      latest,
-      cover: latest?.coupleImageUrl ?? null,
-      place: latest?.placeImageUrl ?? null,
-    };
-  });
-
-  const urls = await getSignedUrls(places.flatMap((p) => [p.cover, p.place]));
-  const signed = (path: string | null) =>
-    path ? (urls.get(path) ?? null) : null;
-
-  return places.map(({ row, latest, cover, place }) => ({
+  return rows.map((row) => ({
     id: String(row.id),
     name: row.name,
     address: row.address,
@@ -102,14 +80,41 @@ export async function getRestaurantMarkers(
     kind: row.kind,
     icon: typeOf(types, row).icon,
     typeLabel: typeOf(types, row).label,
-    date: latest?.visitDate ?? row.eventDate,
+    date: newestFirst(row.visits)[0]?.visitDate ?? row.eventDate,
     visitCount: row.visits.length,
-    lastVisitText: latest?.description ?? null,
-    coverUrl: signed(cover),
-    placeUrl: signed(place),
     isOwn: row.ownerId === user.id,
   }));
 }
+
+/**
+ * What a map pin shows when opened: the latest visit's photos (signed),
+ * date and text. One place at a time, so the map never signs every photo.
+ */
+export async function getPlacePreview(id: number) {
+  const place = await (await visiblePlaces())
+    .where({ id })
+    .select("id", "eventDate")
+    .include("visits", (v) =>
+      v.select("id", "visitDate", "description", "coupleImageUrl", "placeImageUrl"),
+    )
+    .first();
+  if (!place) return null;
+
+  const [latest] = newestFirst(place.visits);
+  const paths = [latest?.coupleImageUrl ?? null, latest?.placeImageUrl ?? null];
+  const urls = await getSignedUrls(paths);
+
+  return {
+    photos: paths
+      .map((path) => (path ? urls.get(path) : undefined))
+      .filter((url): url is string => Boolean(url)),
+    date: latest?.visitDate ?? place.eventDate,
+    visitCount: place.visits.length,
+    text: latest?.description ?? null,
+  };
+}
+
+export type PlacePreview = NonNullable<Awaited<ReturnType<typeof getPlacePreview>>>;
 
 export async function getPendingRestaurants(type?: PlaceType) {
   const rows = await ofType(

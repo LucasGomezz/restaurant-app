@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'7f48e262111a6ccb406b4ae0af112a615e27e27d05cf182bfc410d443aafaeab'>;
+  StorageHashBase<'eea6188ffc3cb12749012d9dfbf73fcfbceeadf37ec203f6f809a11b90820638'>;
 export type ExecutionHash =
   ExecutionHashBase<'21858fe2c94c1ae8c88f2b65f03e610d19e3adf3beca595209c7fbdf996f33d4'>;
 export type ProfileHash =
@@ -293,6 +293,11 @@ export type FieldOutputTypes = {
       readonly requestedBy: CodecTypes['pg/uuid@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly GeocodeCache: {
+      readonly key: CodecTypes['pg/text@1']['output'];
+      readonly results: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly Photo: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly visitId: CodecTypes['pg/int4@1']['output'];
@@ -386,6 +391,11 @@ export type FieldInputTypes = {
       readonly userHigh: CodecTypes['pg/uuid@1']['input'];
       readonly status: 'PENDING' | 'ACCEPTED';
       readonly requestedBy: CodecTypes['pg/uuid@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly GeocodeCache: {
+      readonly key: CodecTypes['pg/text@1']['input'];
+      readonly results: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Photo: {
@@ -483,6 +493,11 @@ export type StorageColumnTypes = {
       readonly userHigh: CodecTypes['pg/uuid@1']['output'];
       readonly userLow: CodecTypes['pg/uuid@1']['output'];
     };
+    readonly geocodeCache: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly key: CodecTypes['pg/text@1']['output'];
+      readonly results: CodecTypes['pg/text@1']['output'];
+    };
     readonly photo: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -577,6 +592,11 @@ export type StorageColumnInputTypes = {
       readonly status: 'PENDING' | 'ACCEPTED';
       readonly userHigh: CodecTypes['pg/uuid@1']['input'];
       readonly userLow: CodecTypes['pg/uuid@1']['input'];
+    };
+    readonly geocodeCache: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly key: CodecTypes['pg/text@1']['input'];
+      readonly results: CodecTypes['pg/text@1']['input'];
     };
     readonly photo: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -1097,6 +1117,30 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly geocodeCache: {
+              columns: {
+                readonly key: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly results: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['key'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
             readonly photo: {
               columns: {
                 readonly id: {
@@ -1468,6 +1512,10 @@ type ContractBase = Omit<
     readonly friendship: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Friendship';
+    };
+    readonly geocodeCache: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'GeocodeCache';
     };
   };
   readonly domain: {
@@ -1903,6 +1951,35 @@ type ContractBase = Omit<
                 readonly userHigh: { readonly column: 'userHigh' };
                 readonly status: { readonly column: 'status' };
                 readonly requestedBy: { readonly column: 'requestedBy' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
+          readonly GeocodeCache: {
+            readonly fields: {
+              readonly key: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly results: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'geocodeCache';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly key: { readonly column: 'key' };
+                readonly results: { readonly column: 'results' };
                 readonly createdAt: { readonly column: 'createdAt' };
               };
             };

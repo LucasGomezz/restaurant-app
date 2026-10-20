@@ -1,0 +1,80 @@
+[
+  {
+    "id": "table.geocodeCache",
+    "label": "Create table \"geocodeCache\"",
+    "summary": "Creates table \"geocodeCache\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "geocodeCache"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"geocodeCache\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"geocodeCache\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"geocodeCache\"",
+        "sql": "CREATE TABLE \"public\".\"geocodeCache\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"key\" text NOT NULL,\n  \"results\" text NOT NULL,\n  PRIMARY KEY (\"key\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"geocodeCache\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"geocodeCache\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.geocodeCache",
+    "label": "Enable row-level security on \"geocodeCache\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "geocodeCache"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"geocodeCache\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "geocodeCache"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"geocodeCache\"",
+        "sql": "ALTER TABLE \"public\".\"geocodeCache\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"geocodeCache\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "geocodeCache"
+        ]
+      }
+    ]
+  }
+]

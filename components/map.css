@@ -1,0 +1,103 @@
+/* MapLibre pieces styled like the app's cards. */
+
+.maplibregl-map {
+  font-family: inherit;
+  background: #f2efe9;
+}
+
+.maplibregl-popup-content {
+  padding: 8px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(28, 25, 23, 0.2);
+}
+
+.maplibregl-popup-content p {
+  margin: 0;
+}
+
+.maplibregl-popup-close-button {
+  top: 4px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  font-size: 18px;
+  color: #78716c;
+}
+
+.maplibregl-ctrl-group {
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(28, 25, 23, 0.15) !important;
+}
+
+/* Teardrop pin: a rotated square with one sharp corner pointing down. */
+.map-pin {
+  position: relative;
+  width: 30px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.map-pin-drop {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 3px solid white;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 6px rgba(28, 25, 23, 0.35);
+  transform: rotate(-45deg);
+  transition: transform 150ms;
+}
+
+.map-pin:hover .map-pin-drop {
+  transform: rotate(-45deg) scale(1.12);
+}
+
+.map-pin-icon {
+  transform: rotate(45deg);
+  font-size: 13px;
+  line-height: 1;
+  color: white;
+}
+
+/* Small place name under each pin. */
+.map-pin-label {
+  position: absolute;
+  top: 34px;
+  left: 15px;
+  transform: translateX(-50%);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.25);
+  color: #1c1917;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  pointer-events: none;
+}
+
+/* Several nearby places, zoomed out: tap to zoom in. */
+.map-cluster {
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border: 3px solid white;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(28, 25, 23, 0.35);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms;
+}
+
+.map-cluster:hover {
+  transform: scale(1.08);
+}

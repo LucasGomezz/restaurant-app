@@ -129,7 +129,10 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
   se alcanza antes que cualquier otro. Opciones al crecer: Supabase pago (más
   conexiones) o el pooler de transacciones si Prisma Next lo soporta.
 
-- El mapa carga solo `id, lat, lng, kind, name, visitado`; las fotos de un pin se piden al tocarlo.
+- El mapa carga solo datos livianos de cada lugar (nombre, tipo, estado, fecha); las fotos y el
+  texto de un pin se piden al abrirlo (`/api/lugares/<id>/preview`, con caché del navegador).
+- El worker de MapLibre se sirve desde `public/maplibre/` (lo copia `scripts/copy-maplibre-worker.mjs`
+  en cada `npm install`): la forma en que MapLibre lo busca no sobrevive al empaquetado de Next.
 - Miniaturas de ~400px generadas al subir y servidas directo (sin el optimizador de Vercel).
 - Agrupación de pines (clustering) nativa de MapLibre.
 - Con muchos lugares: pedir solo los que caen en la zona visible del mapa.
@@ -169,9 +172,14 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 - [ ] Transferir la carpeta a otro miembro (hoy el dueño no puede salir, solo borrarla)
 
 ### Fase 3 — Mapa nuevo
-- [ ] MapLibre + OpenFreeMap con clustering
-- [ ] Filtro por carpeta, fotos bajo demanda
-- [ ] Capa de geocoding con caché
+- [x] MapLibre GL + OpenFreeMap (vectorial, sin API key); estilo configurable
+      con `NEXT_PUBLIC_MAP_STYLE_URL`
+- [x] Pines cercanos agrupados (clusters); los del mismo punto, en un solo pin
+- [x] Fotos y texto bajo demanda: `/api/lugares/<id>/preview`, uno por pin
+- [x] Filtro por carpeta en el mapa (`?carpeta=`)
+- [x] Geocoding detrás de `lib/geocoding.ts` (Nominatim por defecto, Geoapify
+      con `GEOAPIFY_API_KEY`) y caché de 30 días en la tabla `geocodeCache`
+- [ ] Pedir solo los pines de la zona visible (cuando haya miles de lugares)
 
 ### Fase 4 — Lanzamiento
 - [ ] Landing, onboarding, términos y privacidad, dominio, Vercel Pro

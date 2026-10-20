@@ -7,6 +7,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Static files skip the auth check (maplibre/: the map's worker scripts).
+    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|maplibre/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

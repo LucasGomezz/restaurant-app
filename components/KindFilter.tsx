@@ -9,6 +9,8 @@ type KindFilterProps = {
   active?: PlaceType;
   /** Icon-only chips on small screens (used over the map). */
   compact?: boolean;
+  /** Other filters the chips keep, e.g. `{ carpeta: "…" }` on the map. */
+  keep?: Record<string, string>;
 };
 
 const CHIP =
@@ -19,11 +21,18 @@ export function KindFilter({
   types,
   active,
   compact,
+  keep,
 }: KindFilterProps) {
+  const hrefFor = (tipo?: string) => {
+    const params = new URLSearchParams(keep);
+    if (tipo) params.set("tipo", tipo);
+    const query = params.toString();
+    return query ? `${basePath}?${query}` : basePath;
+  };
   const options = [
-    { href: basePath, label: "Todos", icon: null, selected: !active },
+    { href: hrefFor(), label: "Todos", icon: null, selected: !active },
     ...types.map((type) => ({
-      href: `${basePath}?tipo=${type.slug}`,
+      href: hrefFor(type.slug),
       label: type.plural,
       icon: type.icon,
       selected: active?.key === type.key,
