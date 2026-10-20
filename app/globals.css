@@ -82,6 +82,17 @@ summary::-webkit-details-marker {
   animation: slide-in 300ms ease-out;
 }
 
+/* Phone menu: the drawer slides in from the left. */
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.slide-in-left {
+  animation: slide-in-left 200ms ease-out;
+}
+
 /* Photo walls: each photo rises in as it scrolls into view. */
 @keyframes reveal {
   from {
@@ -113,6 +124,7 @@ summary::-webkit-details-marker {
 
 @media (prefers-reduced-motion: reduce) {
   .slide-in,
+  .slide-in-left,
   .reveal,
   .pin-drop {
     animation: none;
