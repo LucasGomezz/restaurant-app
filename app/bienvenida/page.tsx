@@ -3,13 +3,16 @@ import { AuthShell } from "@/components/AuthShell";
 import { ProfileForm } from "@/components/AuthForms";
 import { logout } from "@/lib/actions/auth";
 import { getCurrentUser, getProfile } from "@/lib/auth/session";
-import { suggestUsername } from "@/lib/auth/validation";
+import { safeNextPath, suggestUsername } from "@/lib/auth/validation";
 
 /** First step after signing up: pick a name and a @username. */
-export default async function BienvenidaPage() {
+export default async function BienvenidaPage(props: PageProps<"/bienvenida">) {
+  const { next: rawNext } = await props.searchParams;
+  const next = safeNextPath(typeof rawNext === "string" ? rawNext : null);
+
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (await getProfile(user.id)) redirect("/");
+  if (await getProfile(user.id)) redirect(next);
 
   return (
     <AuthShell
@@ -26,7 +29,7 @@ export default async function BienvenidaPage() {
         </form>
       }
     >
-      <ProfileForm suggestedUsername={suggestUsername(user.email)} />
+      <ProfileForm suggestedUsername={suggestUsername(user.email)} next={next} />
     </AuthShell>
   );
 }

@@ -16,8 +16,8 @@ export function usePhotoViewer({
 }: {
   photos: LightboxPhoto[];
   title: string;
-  /** Server action that removes one photo by id. */
-  onDelete: (photoId: number) => Promise<void>;
+  /** Server action that removes one photo by id; omitted for view-only. */
+  onDelete?: (photoId: number) => Promise<void>;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [isDeleting, startDelete] = useTransition();
@@ -25,7 +25,7 @@ export function usePhotoViewer({
   function remove(photo: LightboxPhoto) {
     if (!window.confirm("¿Eliminar esta foto?")) return;
     startDelete(async () => {
-      await onDelete(photo.id);
+      await onDelete?.(photo.id);
       setOpenIndex(null);
     });
   }
@@ -38,7 +38,7 @@ export function usePhotoViewer({
         title={title}
         onIndexChange={setOpenIndex}
         onClose={() => setOpenIndex(null)}
-        onDelete={remove}
+        onDelete={onDelete ? remove : undefined}
         isDeleting={isDeleting}
       />
     ) : null;
@@ -61,7 +61,7 @@ export function Lightbox({
   title: string;
   onIndexChange: (index: number) => void;
   onClose: () => void;
-  onDelete: (photo: LightboxPhoto) => void;
+  onDelete?: (photo: LightboxPhoto) => void;
   isDeleting: boolean;
 }) {
   const photo = photos[index];
@@ -114,14 +114,16 @@ export function Lightbox({
           {index + 1} / {photos.length}
         </span>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onDelete(photo)}
-            disabled={isDeleting}
-            className="cursor-pointer rounded-lg px-3 py-1.5 font-medium text-red-300 transition hover:bg-white/10 hover:text-red-200 disabled:opacity-60"
-          >
-            {isDeleting ? "Eliminando..." : "Eliminar"}
-          </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(photo)}
+              disabled={isDeleting}
+              className="cursor-pointer rounded-lg px-3 py-1.5 font-medium text-red-300 transition hover:bg-white/10 hover:text-red-200 disabled:opacity-60"
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}

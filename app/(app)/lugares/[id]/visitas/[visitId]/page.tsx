@@ -22,7 +22,7 @@ export default async function VisitPage({ params }: Props) {
     getPlaceTypes(),
   ]);
   if (!data) notFound();
-  const { restaurant, visits } = data;
+  const { restaurant, visits, permissions } = data;
   const index = visits.findIndex((visit) => String(visit.id) === visitId);
   if (index === -1) notFound();
 
@@ -89,6 +89,7 @@ export default async function VisitPage({ params }: Props) {
         visit={visit}
         restaurant={restaurant}
         isOnlyVisit={visits.length === 1}
+        canEdit={permissions.canEdit}
       />
 
       <nav className="flex justify-between gap-3 border-t border-stone-200 pt-4 text-sm font-medium">

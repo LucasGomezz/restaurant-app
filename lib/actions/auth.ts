@@ -1,14 +1,15 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser, getProfile } from "@/lib/auth/session";
 import {
   PASSWORD_MIN_LENGTH,
   normalizeUsername,
+  safeNextPath,
   usernameError,
 } from "@/lib/auth/validation";
+import { siteOrigin } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 /** `error` shows in red; `message` replaces the form with a notice. */
@@ -16,16 +17,6 @@ export type AuthState = { error?: string; message?: string } | undefined;
 
 function str(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
-}
-
-/** The site's own origin, for the links Supabase emails. */
-async function siteOrigin(): Promise<string> {
-  const h = await headers();
-  const origin = h.get("origin");
-  if (origin) return origin;
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
 }
 
 function passwordError(password: string, confirm: string): string | null {
@@ -63,7 +54,7 @@ export async function login(
     return { error: "Email o contraseña incorrectos." };
   }
 
-  redirect("/");
+  redirect(safeNextPath(str(formData, "next")));
 }
 
 export async function signup(
@@ -78,12 +69,17 @@ export async function signup(
   const invalidPassword = passwordError(password, confirm);
   if (invalidPassword) return { error: invalidPassword };
 
+  // After confirming: create the profile, then go where they were heading.
+  const next = safeNextPath(str(formData, "next"));
+  const welcome =
+    next === "/" ? "/bienvenida" : `/bienvenida?next=${encodeURIComponent(next)}`;
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${await siteOrigin()}/auth/confirm?next=/bienvenida`,
+      emailRedirectTo: `${await siteOrigin()}/auth/confirm?next=${encodeURIComponent(welcome)}`,
     },
   });
 
@@ -100,7 +96,7 @@ export async function signup(
   }
 
   // Email confirmation turned off in Supabase: the user is already signed in.
-  if (data.session) redirect("/bienvenida");
+  if (data.session) redirect(welcome);
 
   // Same answer whether or not the email was already registered, so the form
   // can't be used to find out who has an account.
@@ -168,7 +164,8 @@ export async function createProfile(
 ): Promise<AuthState> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (await getProfile(user.id)) redirect("/");
+  const next = safeNextPath(str(formData, "next"));
+  if (await getProfile(user.id)) redirect(next);
 
   const username = normalizeUsername(str(formData, "username"));
   const displayName = str(formData, "displayName");
@@ -196,7 +193,7 @@ export async function createProfile(
     throw error;
   }
 
-  redirect("/");
+  redirect(next);
 }
 
 export async function logout() {

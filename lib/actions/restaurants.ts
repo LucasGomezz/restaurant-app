@@ -8,7 +8,10 @@ import {
   assertCanEditPhoto,
   assertCanEditPlace,
   assertCanEditVisit,
+  assertOwnsPlace,
   categoriesOf,
+  hasRole,
+  roleIn,
 } from "@/lib/access";
 import { requireUser } from "@/lib/actions/guard";
 import { CATEGORY_KEY_PREFIX, isPlaceKind, type PlaceKind } from "@/lib/places";
@@ -48,18 +51,20 @@ function folder(userId: string, kind: "visits" | "places" | "dishes" | "gallery"
 /**
  * The `type` field is a built-in kind ("TRIP") or `c:<id>` for a custom
  * category, whose kind is read from the database, not trusted from the form.
- * Only the user's own categories are accepted.
+ * Accepted: the user's own categories, and the one the place already has
+ * (an editor of a shared place may keep its owner's category).
  */
 async function typeFromForm(
   userId: string,
   formData: FormData,
+  currentCategoryId: number | null = null,
 ): Promise<{ kind: PlaceKind; categoryId: number | null }> {
   const value = str(formData, "type");
   if (value.startsWith(CATEGORY_KEY_PREFIX)) {
     const id = Number(value.slice(CATEGORY_KEY_PREFIX.length));
     const category = Number.isInteger(id)
       ? await db.orm.public.Category.select("id", "baseKind")
-          .where({ id, ...categoriesOf(userId) })
+          .where(id === currentCategoryId ? { id } : { id, ...categoriesOf(userId) })
           .first()
       : null;
     if (category) return { kind: category.baseKind, categoryId: category.id };
@@ -94,11 +99,16 @@ type PlaceFields = {
 async function placeFields(
   userId: string,
   formData: FormData,
+  currentCategoryId: number | null = null,
 ): Promise<PlaceFields | { error: string }> {
   const name = str(formData, "name");
   const lat = coord(formData, "lat");
   const lng = coord(formData, "lng");
-  const { kind, categoryId } = await typeFromForm(userId, formData);
+  const { kind, categoryId } = await typeFromForm(
+    userId,
+    formData,
+    currentCategoryId,
+  );
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -126,10 +136,20 @@ export async function createRestaurant(
   const fields = await placeFields(user.id, formData);
   if ("error" in fields) return fields;
 
-  const restaurant = await db.orm.public.Restaurant.create({
-    ...fields,
-    ownerId: user.id,
-    status: "PENDING",
+  // Created from a folder page: add it there too, if the user can.
+  const folderId = str(formData, "folderId");
+  const intoFolder = hasRole(await roleIn(user.id, folderId), "EDITOR");
+
+  const restaurant = await db.transaction(async (tx) => {
+    const created = await tx.orm.public.Restaurant.create({
+      ...fields,
+      ownerId: user.id,
+      status: "PENDING",
+    });
+    if (intoFolder) {
+      await tx.orm.public.FolderPlace.create({ folderId, placeId: created.id });
+    }
+    return created;
   });
 
   redirect(`/lugares/${restaurant.id}`);
@@ -143,7 +163,14 @@ export async function updateRestaurant(
   const { user } = await requireUser();
   const { placeId } = await assertCanEditPlace(user.id, id);
 
-  const fields = await placeFields(user.id, formData);
+  const current = await db.orm.public.Restaurant.select("categoryId")
+    .where({ id: placeId })
+    .first();
+  const fields = await placeFields(
+    user.id,
+    formData,
+    current?.categoryId ?? null,
+  );
   if ("error" in fields) return fields;
 
   await db.orm.public.Restaurant.where({ id: placeId }).update(fields);
@@ -153,7 +180,7 @@ export async function updateRestaurant(
 
 export async function deleteRestaurant(id: number) {
   const { user } = await requireUser();
-  const { placeId } = await assertCanEditPlace(user.id, id);
+  const { placeId } = await assertOwnsPlace(user.id, id);
 
   const restaurant = await db.orm.public.Restaurant.where({ id: placeId })
     .include("visits", (v) => v.include("dishes").include("photos"))

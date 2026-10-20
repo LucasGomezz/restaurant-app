@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "Mapa" },
   { href: "/pendientes", label: "Pendientes" },
   { href: "/visitados", label: "Visitados" },
+  { href: "/carpetas", label: "Carpetas" },
 ];
 
 function isActive(pathname: string, href: string) {

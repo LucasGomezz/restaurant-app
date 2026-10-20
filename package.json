@@ -10,7 +10,7 @@
     "lint": "eslint",
     "postinstall": "prisma skills sync || exit 0",
     "contract:emit": "prisma contract emit",
-    "test:isolation": "node --env-file=.env --test --test-concurrency=1 --test-reporter=spec tests/isolation.test.ts"
+    "test:e2e": "node --env-file=.env --test --test-concurrency=1 --test-reporter=spec tests/*.test.ts"
   },
   "dependencies": {
     "@prisma/orm-postgres": "^8.0.0-rc.9",
@@ -19,6 +19,7 @@
     "dotenv": "^16.4.5",
     "leaflet": "^1.9.4",
     "next": "16.4.2",
+    "pg": "^8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-leaflet": "^5.0.0",
@@ -28,6 +29,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^20",
+    "@types/pg": "^8.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

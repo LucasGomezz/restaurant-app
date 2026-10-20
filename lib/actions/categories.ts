@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { assertCanEditCategory, categoriesOf } from "@/lib/access";
 import { requireUser } from "@/lib/actions/guard";
+import { graphemeCount } from "@/lib/format";
 import {
   isPlaceKind,
   KIND_ORDER,
@@ -18,12 +19,6 @@ export type CategoryResult = { error: string } | { category: Category };
 
 type CategoryFields = { name: string; icon: string; baseKind: PlaceKind };
 
-function graphemes(text: string) {
-  return [
-    ...new Intl.Segmenter("es", { granularity: "grapheme" }).segment(text),
-  ].length;
-}
-
 /** Validates the input; `exceptId` lets a category keep its own name. */
 async function categoryFields(
   userId: string,
@@ -36,7 +31,7 @@ async function categoryFields(
   if (!name) return { error: "Poné un nombre." };
   if (name.length > 30) return { error: "El nombre es muy largo." };
   if (!icon) return { error: "Elegí un emoji." };
-  if (graphemes(icon) > 1) return { error: "Usá un solo emoji." };
+  if (graphemeCount(icon) > 1) return { error: "Usá un solo emoji." };
   if (!isPlaceKind(input.baseKind)) {
     return { error: "Elegí a qué se parece." };
   }

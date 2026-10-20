@@ -26,7 +26,7 @@ type TripAlbumProps = {
   /** Shown under the album title, e.g. the trip's dates. */
   subtitle?: string;
   /** Server action that removes one photo by id. */
-  onDelete: (photoId: number) => Promise<void>;
+  onDelete?: (photoId: number) => Promise<void>;
 };
 
 /**

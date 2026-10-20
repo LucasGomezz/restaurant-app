@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNextPath } from "@/lib/auth/validation";
 
 /** Pages for signed-out visitors; signed-in users are sent home instead. */
 const GUEST_PATHS = ["/login", "/registro", "/recuperar"];
@@ -7,10 +8,16 @@ const GUEST_PATHS = ["/login", "/registro", "/recuperar"];
 const PUBLIC_PREFIXES = ["/auth/"];
 
 /** Redirect that keeps the session cookies getUser() may have just refreshed. */
-function redirectTo(request: NextRequest, response: NextResponse, pathname: string) {
+function redirectTo(
+  request: NextRequest,
+  response: NextResponse,
+  pathname: string,
+  next?: string,
+  search = "",
+) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
-  url.search = "";
+  url.search = next ? `?next=${encodeURIComponent(next)}` : search;
   const redirect = NextResponse.redirect(url);
   for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
   return redirect;
@@ -54,11 +61,20 @@ export async function updateSession(request: NextRequest) {
   // Only an optimistic check: pages and actions verify the session (and the
   // profile) again close to the data, see lib/auth/session.ts.
   if (!user && !isPublicPath) {
-    return redirectTo(request, response, "/login");
+    // Come back here after signing in (e.g. a folder invitation link).
+    const next =
+      request.method === "GET" && pathname !== "/"
+        ? pathname + request.nextUrl.search
+        : undefined;
+    return redirectTo(request, response, "/login", next);
   }
 
   if (user && isGuestPath) {
-    return redirectTo(request, response, "/");
+    const target = new URL(
+      safeNextPath(request.nextUrl.searchParams.get("next")),
+      request.url,
+    );
+    return redirectTo(request, response, target.pathname, undefined, target.search);
   }
 
   return response;

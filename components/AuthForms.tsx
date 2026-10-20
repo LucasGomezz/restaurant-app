@@ -82,11 +82,17 @@ const newPasswordFields = (
   </>
 );
 
-export function LoginForm() {
+/** Where to go after the form succeeds (kept from the URL's `?next=`). */
+function NextField({ next }: { next?: string }) {
+  return next ? <input type="hidden" name="next" value={next} /> : null;
+}
+
+export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState(login, undefined);
 
   return (
     <form action={action} className="flex w-full flex-col gap-4">
+      <NextField next={next} />
       {emailField}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between gap-2">
@@ -113,13 +119,14 @@ export function LoginForm() {
 }
 
 /** Once it succeeds, the form is replaced by its notice. */
-export function SignupForm() {
+export function SignupForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState(signup, undefined);
 
   if (state?.message) return <FormNotice message={state.message} />;
 
   return (
     <form action={action} className="flex w-full flex-col gap-4">
+      <NextField next={next} />
       {emailField}
       {newPasswordFields}
       <FormError message={state?.error} />
@@ -168,13 +175,16 @@ export function ResetPasswordForm() {
 
 export function ProfileForm({
   suggestedUsername,
+  next,
 }: {
   suggestedUsername: string;
+  next?: string;
 }) {
   const [state, action, pending] = useActionState(createProfile, undefined);
 
   return (
     <form action={action} className="flex w-full flex-col gap-4">
+      <NextField next={next} />
       <Field
         id="displayName"
         label="Tu nombre"

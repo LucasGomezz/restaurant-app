@@ -19,7 +19,7 @@ Mercados: **Argentina e internacional**.
 | 4 | Un viaje puede ser **una carpeta con fechas** (con sus lugares adentro) **o un lugar de tipo Viaje** (un pin con todas sus fotos). | Hay grupos que organizan por viaje y otros por "carpetas de vida". |
 | 5 | Un lugar puede tener **varias visitas**. Pendiente / visitado se deriva de si tiene visitas. | Se vuelve a los lugares; en un grupo cada uno va en momentos distintos. |
 | 6 | La visita y su descripción son **compartidas**: cualquier editor puede modificarlas. Opiniones individuales (comentarios) quedan para más adelante. | Simple; alcanza para empezar. |
-| 7 | IDs **UUID** en todas las tablas. | No se pueden adivinar ni enumerar; necesarios para links de invitación. |
+| 7 | IDs **UUID** en las tablas nuevas que se acceden por link (carpetas, invitaciones). Las existentes siguen con números: cada acceso se valida contra permisos, así que un id adivinado da 404. | Migrar ids con datos y relaciones es el cambio más riesgoso y hoy aporta poco. |
 | 8 | El plan (gratis / pago) es **por usuario**; la cuota se mide por las fotos que sube cada uno. | Las fotos son el costo real. |
 | 9 | Cada servicio externo (mapa, geocoding, storage, pagos) va detrás de **una capa propia**. | Pasar de gratis a pago = cambiar configuración, no reescribir. |
 
@@ -54,8 +54,13 @@ carpeta. *Motivo:* si Pedro comparte un lugar en "Mendoza", yo no puedo pasarlo 
 
 ¹ El owner primero transfiere la carpeta o la borra.
 
-Al salir o ser expulsado de una carpeta, dejás de ver su contenido, salvo los
-lugares que creaste vos.
+Al salir o ser expulsado de una carpeta, dejás de ver su contenido, y **tus
+lugares salen de la carpeta con vos**: nadie sigue compartiendo en un grupo del
+que ya no forma parte.
+
+Tipos personalizados en lugares compartidos: se muestran (y sirven de filtro) a
+quien ve el lugar, pero en los formularios cada uno elige solo entre los suyos;
+un editor que guarda un lugar ajeno conserva el tipo que ya tenía.
 
 ## Modelo de datos
 
@@ -117,6 +122,13 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 
 ## Rendimiento
 
+- **Conexiones a la base:** el pooler de Supabase en modo sesión admite pocas
+  conexiones para todo el proyecto (15 en el plan free). Cada proceso usa un
+  pool chico (`DATABASE_POOL_MAX`, 3 por defecto, en `src/prisma/db.ts`). En
+  Vercel cada instancia serverless abre el suyo: con mucho tráfico, el límite
+  se alcanza antes que cualquier otro. Opciones al crecer: Supabase pago (más
+  conexiones) o el pooler de transacciones si Prisma Next lo soporta.
+
 - El mapa carga solo `id, lat, lng, kind, name, visitado`; las fotos de un pin se piden al tocarlo.
 - Miniaturas de ~400px generadas al subir y servidas directo (sin el optimizador de Vercel).
 - Agrupación de pines (clustering) nativa de MapLibre.
@@ -142,14 +154,16 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 - [x] Módulo de permisos `lib/access.ts` + `npm run test:isolation` (dos usuarios,
       lecturas y Server Actions con ids ajenos)
 - [ ] Hacer `ownerId` obligatorio (NOT NULL) una vez asignados los datos en producción
-- [ ] IDs UUID (decisión 7): pendiente de confirmar si se migran las tablas existentes
 - [ ] Capa de fotos con miniaturas y cuota
 - [x] Sacar el mural de fotos privadas del login
 
 ### Fase 2 — Carpetas y amigos
-- [ ] Crear / editar carpetas, carpetas de viaje con fechas
-- [ ] Invitación por link, roles
+- [x] Crear / editar carpetas, carpetas de viaje con fechas (`/carpetas`)
+- [x] Invitación por link (`/invitacion/<id>`, vence a los 7 días), roles editar / solo ver
+- [x] Agregar lugares desde la carpeta o desde el lugar; crear un lugar directo en una carpeta
+- [x] `npm run test:e2e`: aislamiento entre cuentas y reglas de carpetas (34 casos)
 - [ ] Solicitudes de amistad, invitar amigos a carpetas
+- [ ] Transferir la carpeta a otro miembro (hoy el dueño no puede salir, solo borrarla)
 
 ### Fase 3 — Mapa nuevo
 - [ ] MapLibre + OpenFreeMap con clustering

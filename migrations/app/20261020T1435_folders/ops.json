@@ -1,0 +1,803 @@
+[
+  {
+    "id": "table.folder",
+    "label": "Create table \"folder\"",
+    "summary": "Creates table \"folder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "folder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"folder\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folder\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"folder\"",
+        "sql": "CREATE TABLE \"public\".\"folder\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"endDate\" timestamptz,\n  \"icon\" text DEFAULT '📁' NOT NULL,\n  \"id\" \"uuid\" NOT NULL,\n  \"name\" text NOT NULL,\n  \"startDate\" timestamptz,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"folder\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folder\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.folderInvite",
+    "label": "Create table \"folderInvite\"",
+    "summary": "Creates table \"folderInvite\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "folderInvite"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"folderInvite\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderInvite\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"folderInvite\"",
+        "sql": "CREATE TABLE \"public\".\"folderInvite\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"folderId\" \"uuid\" NOT NULL,\n  \"id\" \"uuid\" NOT NULL,\n  \"role\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"folderInvite_role_check_61370bc4\" CHECK (\"role\" IN ('OWNER', 'EDITOR', 'VIEWER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"folderInvite\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderInvite\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.folderMember",
+    "label": "Create table \"folderMember\"",
+    "summary": "Creates table \"folderMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"folderMember\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"folderMember\"",
+        "sql": "CREATE TABLE \"public\".\"folderMember\" (\n  \"folderId\" \"uuid\" NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"joinedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"role\" text NOT NULL,\n  \"userId\" \"uuid\" NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"folderMember_role_check_61370bc4\" CHECK (\"role\" IN ('OWNER', 'EDITOR', 'VIEWER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"folderMember\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.folderPlace",
+    "label": "Create table \"folderPlace\"",
+    "summary": "Creates table \"folderPlace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"folderPlace\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"folderPlace\"",
+        "sql": "CREATE TABLE \"public\".\"folderPlace\" (\n  \"addedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"folderId\" \"uuid\" NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"placeId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"folderPlace\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.folderMember.folderMember_folderId_userId_key",
+    "label": "Add unique constraint on \"folderMember\" (folderId, userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "folderMember_folderId_userId_key",
+        "table": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"folderMember_folderId_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderMember_folderId_userId_key",
+          "public",
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"folderMember_folderId_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"folderMember\" ADD CONSTRAINT \"folderMember_folderId_userId_key\" UNIQUE (\"folderId\", \"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"folderMember_folderId_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderMember_folderId_userId_key",
+          "public",
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.folderPlace.folderPlace_folderId_placeId_key",
+    "label": "Add unique constraint on \"folderPlace\" (folderId, placeId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "folderPlace_folderId_placeId_key",
+        "table": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"folderPlace_folderId_placeId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderPlace_folderId_placeId_key",
+          "public",
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"folderPlace_folderId_placeId_key\"",
+        "sql": "ALTER TABLE \"public\".\"folderPlace\" ADD CONSTRAINT \"folderPlace_folderId_placeId_key\" UNIQUE (\"folderId\", \"placeId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"folderPlace_folderId_placeId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderPlace_folderId_placeId_key",
+          "public",
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.folderInvite.folderInvite_folderId_idx_5985e562",
+    "label": "Create index \"folderInvite_folderId_idx_5985e562\" on \"folderInvite\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "folderInvite_folderId_idx_5985e562",
+        "table": "folderInvite"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"folderInvite_folderId_idx_5985e562\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderInvite_folderId_idx_5985e562\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"folderInvite_folderId_idx_5985e562\"",
+        "sql": "CREATE INDEX \"folderInvite_folderId_idx_5985e562\" ON \"public\".\"folderInvite\" (\"folderId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"folderInvite_folderId_idx_5985e562\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderInvite_folderId_idx_5985e562\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.folderMember.folderMember_folderId_idx_5985e562",
+    "label": "Create index \"folderMember_folderId_idx_5985e562\" on \"folderMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "folderMember_folderId_idx_5985e562",
+        "table": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"folderMember_folderId_idx_5985e562\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderMember_folderId_idx_5985e562\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"folderMember_folderId_idx_5985e562\"",
+        "sql": "CREATE INDEX \"folderMember_folderId_idx_5985e562\" ON \"public\".\"folderMember\" (\"folderId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"folderMember_folderId_idx_5985e562\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderMember_folderId_idx_5985e562\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.folderMember.folderMember_userId_idx_a489d58a",
+    "label": "Create index \"folderMember_userId_idx_a489d58a\" on \"folderMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "folderMember_userId_idx_a489d58a",
+        "table": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"folderMember_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderMember_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"folderMember_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"folderMember_userId_idx_a489d58a\" ON \"public\".\"folderMember\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"folderMember_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderMember_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.folderPlace.folderPlace_folderId_idx_5985e562",
+    "label": "Create index \"folderPlace_folderId_idx_5985e562\" on \"folderPlace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "folderPlace_folderId_idx_5985e562",
+        "table": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"folderPlace_folderId_idx_5985e562\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderPlace_folderId_idx_5985e562\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"folderPlace_folderId_idx_5985e562\"",
+        "sql": "CREATE INDEX \"folderPlace_folderId_idx_5985e562\" ON \"public\".\"folderPlace\" (\"folderId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"folderPlace_folderId_idx_5985e562\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderPlace_folderId_idx_5985e562\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.folderPlace.folderPlace_placeId_idx_918e92e1",
+    "label": "Create index \"folderPlace_placeId_idx_918e92e1\" on \"folderPlace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "folderPlace_placeId_idx_918e92e1",
+        "table": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"folderPlace_placeId_idx_918e92e1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderPlace_placeId_idx_918e92e1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"folderPlace_placeId_idx_918e92e1\"",
+        "sql": "CREATE INDEX \"folderPlace_placeId_idx_918e92e1\" ON \"public\".\"folderPlace\" (\"placeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"folderPlace_placeId_idx_918e92e1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"folderPlace_placeId_idx_918e92e1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.folderInvite.folderInvite_folderId_fkey",
+    "label": "Add foreign key \"folderInvite_folderId_fkey\" on \"folderInvite\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "folderInvite_folderId_fkey",
+        "table": "folderInvite"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"folderInvite_folderId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderInvite_folderId_fkey",
+          "public",
+          "\"public\".\"folderInvite\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"folderInvite_folderId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"folderInvite\"\nADD CONSTRAINT \"folderInvite_folderId_fkey\"\nFOREIGN KEY (\"folderId\")\nREFERENCES \"public\".\"folder\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"folderInvite_folderId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderInvite_folderId_fkey",
+          "public",
+          "\"public\".\"folderInvite\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.folderMember.folderMember_folderId_fkey",
+    "label": "Add foreign key \"folderMember_folderId_fkey\" on \"folderMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "folderMember_folderId_fkey",
+        "table": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"folderMember_folderId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderMember_folderId_fkey",
+          "public",
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"folderMember_folderId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"folderMember\"\nADD CONSTRAINT \"folderMember_folderId_fkey\"\nFOREIGN KEY (\"folderId\")\nREFERENCES \"public\".\"folder\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"folderMember_folderId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderMember_folderId_fkey",
+          "public",
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.folderMember.folderMember_userId_fkey",
+    "label": "Add foreign key \"folderMember_userId_fkey\" on \"folderMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "folderMember_userId_fkey",
+        "table": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"folderMember_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderMember_userId_fkey",
+          "public",
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"folderMember_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"folderMember\"\nADD CONSTRAINT \"folderMember_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"profile\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"folderMember_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderMember_userId_fkey",
+          "public",
+          "\"public\".\"folderMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.folderPlace.folderPlace_folderId_fkey",
+    "label": "Add foreign key \"folderPlace_folderId_fkey\" on \"folderPlace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "folderPlace_folderId_fkey",
+        "table": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"folderPlace_folderId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderPlace_folderId_fkey",
+          "public",
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"folderPlace_folderId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"folderPlace\"\nADD CONSTRAINT \"folderPlace_folderId_fkey\"\nFOREIGN KEY (\"folderId\")\nREFERENCES \"public\".\"folder\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"folderPlace_folderId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderPlace_folderId_fkey",
+          "public",
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.folderPlace.folderPlace_placeId_fkey",
+    "label": "Add foreign key \"folderPlace_placeId_fkey\" on \"folderPlace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "folderPlace_placeId_fkey",
+        "table": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"folderPlace_placeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderPlace_placeId_fkey",
+          "public",
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"folderPlace_placeId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"folderPlace\"\nADD CONSTRAINT \"folderPlace_placeId_fkey\"\nFOREIGN KEY (\"placeId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"folderPlace_placeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "folderPlace_placeId_fkey",
+          "public",
+          "\"public\".\"folderPlace\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.folder",
+    "label": "Enable row-level security on \"folder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "folder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"folder\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "folder"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"folder\"",
+        "sql": "ALTER TABLE \"public\".\"folder\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"folder\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "folder"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.folderInvite",
+    "label": "Enable row-level security on \"folderInvite\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "folderInvite"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"folderInvite\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "folderInvite"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"folderInvite\"",
+        "sql": "ALTER TABLE \"public\".\"folderInvite\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"folderInvite\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "folderInvite"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.folderMember",
+    "label": "Enable row-level security on \"folderMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "folderMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"folderMember\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "folderMember"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"folderMember\"",
+        "sql": "ALTER TABLE \"public\".\"folderMember\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"folderMember\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "folderMember"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rowLevelSecurity.public.folderPlace",
+    "label": "Enable row-level security on \"folderPlace\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rowLevelSecurity",
+        "name": "folderPlace"
+      }
+    },
+    "precheck": [
+      {
+        "description": "check RLS is not already enabled on \"folderPlace\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND NOT (\"c\".\"relrowsecurity\"))) AS \"result\"",
+        "params": [
+          "public",
+          "folderPlace"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "enable row-level security on \"folderPlace\"",
+        "sql": "ALTER TABLE \"public\".\"folderPlace\" ENABLE ROW LEVEL SECURITY"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify row-level security is enabled on \"folderPlace\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"c\".\"relrowsecurity\")) AS \"result\"",
+        "params": [
+          "public",
+          "folderPlace"
+        ]
+      }
+    ]
+  }
+]

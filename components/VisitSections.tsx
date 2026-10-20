@@ -26,47 +26,52 @@ export function VisitSections({
   visit,
   restaurant,
   isOnlyVisit,
+  canEdit,
 }: {
   visit: Detail["visits"][number];
   restaurant: Detail["restaurant"];
   /** Deleting the only visit sends the place back to pending. */
   isOnlyVisit: boolean;
+  /** False for view-only folder members: no edit or delete controls. */
+  canEdit: boolean;
 }) {
   return (
     <>
-      <details className="group card">
-        <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium text-stone-700 transition select-none hover:text-stone-900">
-          <span className="inline-block transition group-open:rotate-90">
-            ›
-          </span>{" "}
-          Editar visita
-        </summary>
-        <div className="flex flex-col gap-5 border-t border-stone-200 p-5">
-          <VisitForm
-            action={updateVisit.bind(null, visit.id)}
-            kind={restaurant.kind}
-            defaultValues={{
-              visitDate: toDateInputValue(visit.visitDate),
-              endDate: visit.endDate ? toDateInputValue(visit.endDate) : null,
-              description: visit.description,
-            }}
-            submitLabel="Guardar cambios"
-          />
-          <form
-            action={deleteVisit.bind(null, visit.id)}
-            className="border-t border-stone-200 pt-4"
-          >
-            <ConfirmButton
-              message={`¿Eliminar la visita del ${formatDate(visit.visitDate)}? Se borran también sus fotos y platos.${
-                isOnlyVisit ? " El lugar vuelve a pendientes." : ""
-              }`}
-              className="cursor-pointer text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+      {canEdit && (
+        <details className="group card">
+          <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium text-stone-700 transition select-none hover:text-stone-900">
+            <span className="inline-block transition group-open:rotate-90">
+              ›
+            </span>{" "}
+            Editar visita
+          </summary>
+          <div className="flex flex-col gap-5 border-t border-stone-200 p-5">
+            <VisitForm
+              action={updateVisit.bind(null, visit.id)}
+              kind={restaurant.kind}
+              defaultValues={{
+                visitDate: toDateInputValue(visit.visitDate),
+                endDate: visit.endDate ? toDateInputValue(visit.endDate) : null,
+                description: visit.description,
+              }}
+              submitLabel="Guardar cambios"
+            />
+            <form
+              action={deleteVisit.bind(null, visit.id)}
+              className="border-t border-stone-200 pt-4"
             >
-              Eliminar esta visita
-            </ConfirmButton>
-          </form>
-        </div>
-      </details>
+              <ConfirmButton
+                message={`¿Eliminar la visita del ${formatDate(visit.visitDate)}? Se borran también sus fotos y platos.${
+                  isOnlyVisit ? " El lugar vuelve a pendientes." : ""
+                }`}
+                className="cursor-pointer text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+              >
+                Eliminar esta visita
+              </ConfirmButton>
+            </form>
+          </div>
+        </details>
+      )}
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold text-stone-900">
@@ -80,27 +85,29 @@ export function VisitSections({
             photos={visit.photos}
             title={restaurant.name}
             subtitle={formatDateRange(visit.visitDate, visit.endDate)}
-            onDelete={deletePhoto}
+            onDelete={canEdit ? deletePhoto : undefined}
           />
         ) : visit.photos.length > 0 ? (
           <PhotoGallery
             photos={visit.photos}
             title={restaurant.name}
-            onDelete={deletePhoto}
+            onDelete={canEdit ? deletePhoto : undefined}
           />
         ) : (
           <p className="text-sm text-stone-500">Todavía no hay fotos.</p>
         )}
-        <details className="group rounded-2xl border border-dashed border-stone-300 bg-white/60 transition open:bg-white">
-          <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
-            + Agregar fotos
-          </summary>
-          <div className="border-t border-stone-200 p-4">
-            <AddPhotosForm
-              action={addPhotos.bind(null, visit.id)}
-            />
-          </div>
-        </details>
+        {canEdit && (
+          <details className="group rounded-2xl border border-dashed border-stone-300 bg-white/60 transition open:bg-white">
+            <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
+              + Agregar fotos
+            </summary>
+            <div className="border-t border-stone-200 p-4">
+              <AddPhotosForm
+                action={addPhotos.bind(null, visit.id)}
+              />
+            </div>
+          </details>
+        )}
       </section>
 
       {(restaurant.kind === "RESTAURANT" || visit.dishes.length > 0) && (
@@ -114,7 +121,7 @@ export function VisitSections({
 
           {visit.dishes.length === 0 && (
             <p className="text-sm text-stone-500">
-              Todavía no cargaste platos.
+              Todavía no hay platos.
             </p>
           )}
 
@@ -145,47 +152,51 @@ export function VisitSections({
                       {dish.description}
                     </p>
                   )}
-                  <div className="mt-auto flex flex-wrap items-start gap-x-4 gap-y-2 pt-2">
-                    <details className="group w-full">
-                      <summary className="cursor-pointer list-none text-sm font-medium text-brand-600 transition select-none hover:text-brand-700">
-                        Editar plato
-                      </summary>
-                      <div className="mt-3 flex flex-col gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3.5">
-                        <DishForm
-                          action={updateDish.bind(null, dish.id)}
-                          defaultValues={dish}
-                          submitLabel="Guardar"
-                        />
-                        <form
-                          action={deleteDish.bind(null, dish.id)}
-                          className="border-t border-stone-200 pt-3"
-                        >
-                          <ConfirmButton
-                            message={`¿Eliminar el plato "${dish.name}"?`}
-                            className="cursor-pointer text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+                  {canEdit && (
+                    <div className="mt-auto flex flex-wrap items-start gap-x-4 gap-y-2 pt-2">
+                      <details className="group w-full">
+                        <summary className="cursor-pointer list-none text-sm font-medium text-brand-600 transition select-none hover:text-brand-700">
+                          Editar plato
+                        </summary>
+                        <div className="mt-3 flex flex-col gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3.5">
+                          <DishForm
+                            action={updateDish.bind(null, dish.id)}
+                            defaultValues={dish}
+                            submitLabel="Guardar"
+                          />
+                          <form
+                            action={deleteDish.bind(null, dish.id)}
+                            className="border-t border-stone-200 pt-3"
                           >
-                            Eliminar plato
-                          </ConfirmButton>
-                        </form>
-                      </div>
-                    </details>
-                  </div>
+                            <ConfirmButton
+                              message={`¿Eliminar el plato "${dish.name}"?`}
+                              className="cursor-pointer text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
+                            >
+                              Eliminar plato
+                            </ConfirmButton>
+                          </form>
+                        </div>
+                      </details>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}
           </ul>
 
-          <details className="group rounded-2xl border border-dashed border-stone-300 bg-white/60 transition open:bg-white">
-            <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
-              + Agregar plato
-            </summary>
-            <div className="border-t border-stone-200 p-4">
-              <DishForm
-                action={addDish.bind(null, visit.id)}
-                submitLabel="Agregar plato"
-              />
-            </div>
-          </details>
+          {canEdit && (
+            <details className="group rounded-2xl border border-dashed border-stone-300 bg-white/60 transition open:bg-white">
+              <summary className="cursor-pointer list-none px-4 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
+                + Agregar plato
+              </summary>
+              <div className="border-t border-stone-200 p-4">
+                <DishForm
+                  action={addDish.bind(null, visit.id)}
+                  submitLabel="Agregar plato"
+                />
+              </div>
+            </details>
+          )}
         </section>
       )}
     </>

@@ -39,3 +39,9 @@ export function formatDateRange(start: string, end: string | null): string {
   }
   return dateFormatter.formatRange(from, to);
 }
+
+/** Visible characters, counting an emoji like "👨‍👩‍👧" as one. */
+export function graphemeCount(text: string): number {
+  return [...new Intl.Segmenter("es", { granularity: "grapheme" }).segment(text)]
+    .length;
+}

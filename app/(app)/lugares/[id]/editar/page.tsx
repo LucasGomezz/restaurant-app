@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { PlaceForm } from "@/components/PlaceForm";
 import { updateRestaurant } from "@/lib/actions/restaurants";
-import { getPlaceTypes } from "@/lib/queries/categories";
+import { getFormPlaceTypes } from "@/lib/queries/categories";
 import { getKnownLocations, getPlaceForEdit } from "@/lib/queries/restaurants";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +14,13 @@ export default async function EditarRestaurantePage({ params }: Props) {
   const restaurantId = Number(id);
   if (!Number.isInteger(restaurantId)) notFound();
 
-  const [restaurant, types, knownLocations] = await Promise.all([
+  const [restaurant, knownLocations] = await Promise.all([
     getPlaceForEdit(restaurantId),
-    getPlaceTypes(),
     getKnownLocations(),
   ]);
 
   if (!restaurant) notFound();
+  const types = await getFormPlaceTypes(restaurant.categoryId);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">

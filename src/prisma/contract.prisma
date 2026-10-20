@@ -3,12 +3,22 @@
 types {
   /// Supabase Auth user id (auth.users.id).
   AuthUserId = Uuid
+  /// Random id for rows reached by link, so they can't be guessed.
+  RandomId   = Uuid
 }
 
 enum RestaurantStatus {
   @@type("pg/text@1")
   pending = "PENDING"
   visited = "VISITED"
+}
+
+/// What a member may do in a folder (see lib/access.ts).
+enum FolderRole {
+  @@type("pg/text@1")
+  owner  = "OWNER"
+  editor = "EDITOR"
+  viewer = "VIEWER"
 }
 
 enum PlaceKind {
@@ -39,6 +49,7 @@ model Restaurant {
   notes     String?
   createdAt TimestamptzString @default(now())
   visits    Visit[]
+  folders   FolderPlace[]
 
   @@index([ownerId])
   @@index([status])
@@ -135,6 +146,79 @@ model Profile {
   createdAt   TimestamptzString @default(now())
   places      Restaurant[]
   categories  Category[]
+  memberships FolderMember[]
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// A shared folder ("Con Juan", "Mendoza 2026"): its members see every place
+// added to it. With dates it is a trip folder. Roles live in FolderMember.
+model Folder {
+  id          RandomId          @id @default(uuid())
+  name        String
+  description String?
+  icon        String            @default("📁")
+  /// Trip folders: first and last day.
+  startDate   TimestamptzString?
+  endDate     TimestamptzString?
+  createdAt   TimestamptzString @default(now())
+  members     FolderMember[]
+  places      FolderPlace[]
+  invites     FolderInvite[]
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+model FolderMember {
+  id       Int               @id @default(autoincrement())
+  folderId RandomId
+  folder   Folder            @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  userId   AuthUserId
+  user     Profile           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     FolderRole
+  joinedAt TimestamptzString @default(now())
+
+  @@unique([folderId, userId])
+  @@index([userId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// A place added to a folder. Only the place's owner can add it (lib/access.ts).
+model FolderPlace {
+  id       Int               @id @default(autoincrement())
+  folderId RandomId
+  folder   Folder            @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  placeId  Int
+  place    Restaurant        @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  addedAt  TimestamptzString @default(now())
+
+  @@unique([folderId, placeId])
+  @@index([placeId])
+
+  // RLS on with no policies: the public API (anon key) gets nothing;
+  // the app connects as the table owner, which bypasses RLS.
+  @@rls
+}
+
+// A join link for a folder: /invitacion/<id>. Reusable until it expires or
+// the owner replaces it.
+model FolderInvite {
+  id        RandomId          @id @default(uuid())
+  folderId  RandomId
+  folder    Folder            @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  /// Role given to whoever joins through the link (never OWNER).
+  role      FolderRole
+  expiresAt TimestamptzString
+  createdAt TimestamptzString @default(now())
+
+  @@index([folderId])
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.

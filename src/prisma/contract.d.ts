@@ -33,8 +33,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d0aebb6fa76aa33f77c82ec7b292e027b2e8f23f2e9576296c64a337b3e967a3'>;
-export type ExecutionHash = ExecutionHashBase<string>;
+  StorageHashBase<'92378754b671ac8dfa7c968602a7298c50d43ee231d0222b8b5d575bcd033208'>;
+export type ExecutionHash =
+  ExecutionHashBase<'21858fe2c94c1ae8c88f2b65f03e610d19e3adf3beca595209c7fbdf996f33d4'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -255,6 +256,35 @@ export type FieldOutputTypes = {
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly imageUrl: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly Folder: {
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'] | null;
+      readonly icon: CodecTypes['pg/text@1']['output'];
+      readonly startDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly endDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly FolderInvite: {
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly folderId: CodecTypes['pg/uuid@1']['output'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+      readonly expiresAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly FolderMember: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly folderId: CodecTypes['pg/uuid@1']['output'];
+      readonly userId: CodecTypes['pg/uuid@1']['output'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+      readonly joinedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly FolderPlace: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly folderId: CodecTypes['pg/uuid@1']['output'];
+      readonly placeId: CodecTypes['pg/int4@1']['output'];
+      readonly addedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly Photo: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly visitId: CodecTypes['pg/int4@1']['output'];
@@ -312,6 +342,35 @@ export type FieldInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly imageUrl: CodecTypes['pg/text@1']['input'] | null;
+    };
+    readonly Folder: {
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'] | null;
+      readonly icon: CodecTypes['pg/text@1']['input'];
+      readonly startDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly endDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly FolderInvite: {
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly folderId: CodecTypes['pg/uuid@1']['input'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+      readonly expiresAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly FolderMember: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly folderId: CodecTypes['pg/uuid@1']['input'];
+      readonly userId: CodecTypes['pg/uuid@1']['input'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+      readonly joinedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly FolderPlace: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly folderId: CodecTypes['pg/uuid@1']['input'];
+      readonly placeId: CodecTypes['pg/int4@1']['input'];
+      readonly addedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Photo: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -371,6 +430,35 @@ export type StorageColumnTypes = {
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly visitId: CodecTypes['pg/int4@1']['output'];
     };
+    readonly folder: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'] | null;
+      readonly endDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly icon: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly startDate: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+    };
+    readonly folderInvite: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly folderId: CodecTypes['pg/uuid@1']['output'];
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+    };
+    readonly folderMember: {
+      readonly folderId: CodecTypes['pg/uuid@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly joinedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+      readonly userId: CodecTypes['pg/uuid@1']['output'];
+    };
+    readonly folderPlace: {
+      readonly addedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly folderId: CodecTypes['pg/uuid@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly placeId: CodecTypes['pg/int4@1']['output'];
+    };
     readonly photo: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -428,6 +516,35 @@ export type StorageColumnInputTypes = {
       readonly imageUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly visitId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly folder: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'] | null;
+      readonly endDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly icon: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly startDate: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+    };
+    readonly folderInvite: {
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly folderId: CodecTypes['pg/uuid@1']['input'];
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+    };
+    readonly folderMember: {
+      readonly folderId: CodecTypes['pg/uuid@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly joinedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly role: 'OWNER' | 'EDITOR' | 'VIEWER';
+      readonly userId: CodecTypes['pg/uuid@1']['input'];
+    };
+    readonly folderPlace: {
+      readonly addedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly folderId: CodecTypes['pg/uuid@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly placeId: CodecTypes['pg/int4@1']['input'];
     };
     readonly photo: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -604,6 +721,261 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'visit';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly folder: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'RandomId';
+                };
+                readonly name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly description: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly icon: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', '📁'>;
+                  };
+                };
+                readonly startDate: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly endDate: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
+            readonly folderInvite: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'RandomId';
+                };
+                readonly folderId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'RandomId';
+                };
+                readonly role: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly expiresAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'folderInvite_folderId_idx_5985e562';
+                  readonly prefix: 'folderInvite_folderId_idx';
+                  readonly columns: readonly ['folderId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folderInvite';
+                    readonly columns: readonly ['folderId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folder';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly folderMember: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly folderId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'RandomId';
+                };
+                readonly userId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'AuthUserId';
+                };
+                readonly role: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly joinedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['folderId', 'userId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'folderMember_userId_idx_a489d58a';
+                  readonly prefix: 'folderMember_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'folderMember_folderId_idx_5985e562';
+                  readonly prefix: 'folderMember_folderId_idx';
+                  readonly columns: readonly ['folderId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folderMember';
+                    readonly columns: readonly ['folderId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folder';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folderMember';
+                    readonly columns: readonly ['userId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'profile';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly folderPlace: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly folderId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly typeRef: 'RandomId';
+                };
+                readonly placeId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+                readonly addedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['folderId', 'placeId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'folderPlace_placeId_idx_918e92e1';
+                  readonly prefix: 'folderPlace_placeId_idx';
+                  readonly columns: readonly ['placeId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'folderPlace_folderId_idx_5985e562';
+                  readonly prefix: 'folderPlace_folderId_idx';
+                  readonly columns: readonly ['folderId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folderPlace';
+                    readonly columns: readonly ['folderId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folder';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'folderPlace';
+                    readonly columns: readonly ['placeId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'restaurant';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -914,6 +1286,10 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
+            readonly FolderRole: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['OWNER', 'EDITOR', 'VIEWER'];
+            };
             readonly PlaceKind: {
               readonly kind: 'valueSet';
               readonly values: readonly ['RESTAURANT', 'TRIP', 'EVENT'];
@@ -928,6 +1304,12 @@ type ContractBase = Omit<
     };
     readonly types: {
       readonly AuthUserId: {
+        readonly kind: 'codec-instance';
+        readonly codecId: 'pg/uuid@1';
+        readonly nativeType: 'uuid';
+        readonly typeParams: Record<string, never>;
+      };
+      readonly RandomId: {
         readonly kind: 'codec-instance';
         readonly codecId: 'pg/uuid@1';
         readonly nativeType: 'uuid';
@@ -950,6 +1332,19 @@ type ContractBase = Omit<
     readonly dish: { readonly namespace: 'public' & NamespaceId; readonly model: 'Dish' };
     readonly photo: { readonly namespace: 'public' & NamespaceId; readonly model: 'Photo' };
     readonly profile: { readonly namespace: 'public' & NamespaceId; readonly model: 'Profile' };
+    readonly folder: { readonly namespace: 'public' & NamespaceId; readonly model: 'Folder' };
+    readonly folderMember: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'FolderMember';
+    };
+    readonly folderPlace: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'FolderPlace';
+    };
+    readonly folderInvite: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'FolderInvite';
+    };
   };
   readonly domain: {
     readonly namespaces: {
@@ -1059,6 +1454,268 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly Folder: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly description: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly icon: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly startDate: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly endDate: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly invites: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'FolderInvite';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['folderId'];
+                };
+              };
+              readonly members: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'FolderMember';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['folderId'];
+                };
+              };
+              readonly places: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'FolderPlace';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['folderId'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'folder';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly description: { readonly column: 'description' };
+                readonly icon: { readonly column: 'icon' };
+                readonly startDate: { readonly column: 'startDate' };
+                readonly endDate: { readonly column: 'endDate' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
+          readonly FolderInvite: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly folderId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly role: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly expiresAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly folder: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Folder';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['folderId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'folderInvite';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly folderId: { readonly column: 'folderId' };
+                readonly role: { readonly column: 'role' };
+                readonly expiresAt: { readonly column: 'expiresAt' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
+          readonly FolderMember: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly folderId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly role: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly joinedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly folder: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Folder';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['folderId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly user: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Profile';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'folderMember';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly folderId: { readonly column: 'folderId' };
+                readonly userId: { readonly column: 'userId' };
+                readonly role: { readonly column: 'role' };
+                readonly joinedAt: { readonly column: 'joinedAt' };
+              };
+            };
+          };
+          readonly FolderPlace: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly folderId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly placeId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly addedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly folder: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Folder';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['folderId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly place: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Restaurant';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['placeId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'folderPlace';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly folderId: { readonly column: 'folderId' };
+                readonly placeId: { readonly column: 'placeId' };
+                readonly addedAt: { readonly column: 'addedAt' };
+              };
+            };
+          };
           readonly Photo: {
             readonly fields: {
               readonly id: {
@@ -1142,6 +1799,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['ownerId'];
+                };
+              };
+              readonly memberships: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'FolderMember';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
                 };
               };
               readonly places: {
@@ -1234,6 +1902,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['categoryId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly folders: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'FolderPlace';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['placeId'];
                 };
               };
               readonly owner: {
@@ -1388,6 +2067,14 @@ type ContractBase = Omit<
               { readonly name: 'visited'; readonly value: 'VISITED' },
             ];
           };
+          readonly FolderRole: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'owner'; readonly value: 'OWNER' },
+              { readonly name: 'editor'; readonly value: 'EDITOR' },
+              { readonly name: 'viewer'; readonly value: 'VIEWER' },
+            ];
+          };
           readonly PlaceKind: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
@@ -1419,6 +2106,29 @@ type ContractBase = Omit<
     };
   };
   readonly extensions: {};
+  readonly execution: {
+    readonly executionHash: ExecutionHash;
+    readonly mutations: {
+      readonly defaults: readonly [
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'folder';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'folderInvite';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+      ];
+    };
+  };
   readonly meta: {};
 
   readonly profileHash: ProfileHash;

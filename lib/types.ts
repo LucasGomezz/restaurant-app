@@ -21,4 +21,6 @@ export type RestaurantMarker = {
   /** Signed URLs of the visit photos, when the restaurant was visited. */
   coverUrl?: string | null;
   placeUrl?: string | null;
+  /** Created by the signed-in user (not shared with them through a folder). */
+  isOwn?: boolean;
 };

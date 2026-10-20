@@ -38,6 +38,8 @@ type PlaceFormProps = {
   knownLocations?: KnownLocation[];
   submitLabel: string;
   cancelHref: string;
+  /** New places only: also add it to this folder. */
+  folderId?: string;
 };
 
 export function PlaceForm({
@@ -48,6 +50,7 @@ export function PlaceForm({
   knownLocations,
   submitLabel,
   cancelHref,
+  folderId,
 }: PlaceFormProps) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const [types, setTypes] = useState(initialTypes);
@@ -66,6 +69,7 @@ export function PlaceForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      {folderId && <input type="hidden" name="folderId" value={folderId} />}
       <fieldset className="flex flex-col gap-1.5">
         <legend className="field-label mb-1.5">Tipo</legend>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

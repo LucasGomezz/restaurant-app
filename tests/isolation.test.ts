@@ -1,125 +1,27 @@
 /**
- * Data isolation between accounts, end to end against a running dev server.
+ * Data isolation between accounts that share nothing.
  *
- *   npm run dev                    # in another terminal
- *   npm run test:isolation
+ *   npm run dev          # in another terminal
+ *   npm run test:e2e
  *
- * Creates two throwaway users (Ana, the owner, and Beto, the attacker), seeds
- * Ana's data straight into the database, and checks that Beto can neither
- * see it on any page nor change it by calling Server Actions with Ana's ids
- * (what a forged request would do). Everything is deleted at the end.
- *
- * Uses the DATABASE_URL and Supabase keys from .env: point them at the
- * development project, never at production.
+ * Ana owns some data; Beto (the attacker) must neither see it on any page nor
+ * change it by calling Server Actions with Ana's ids. See tests/helpers.ts.
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { after, before, describe, test } from "node:test";
-import { createClient } from "@supabase/supabase-js";
-import { db } from "../src/prisma/db.ts";
+import {
+  RUN,
+  callAction,
+  createUser,
+  db,
+  deleteUsers,
+  page,
+  seedPlace,
+  type TestUser,
+} from "./helpers.ts";
 
-const BASE = process.env.TEST_BASE_URL ?? "http://localhost:3000";
-const RUN = Date.now().toString(36);
-
-const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
-
-// ---------- HTTP with a cookie jar per user ----------
-
-type Session = { cookies: Map<string, string> };
-
-function cookieHeader(session: Session) {
-  return [...session.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
-}
-
-async function request(session: Session, path: string, init: RequestInit = {}) {
-  const response = await fetch(BASE + path, {
-    ...init,
-    redirect: "manual",
-    headers: { ...init.headers, cookie: cookieHeader(session) },
-  });
-  for (const cookie of response.headers.getSetCookie()) {
-    const [pair] = cookie.split(";");
-    const index = pair.indexOf("=");
-    const name = pair.slice(0, index);
-    const value = pair.slice(index + 1);
-    if (value) session.cookies.set(name, value);
-    else session.cookies.delete(name);
-  }
-  return response;
-}
-
-async function page(session: Session, path: string) {
-  const response = await request(session, path);
-  return { status: response.status, html: await response.text() };
-}
-
-/** Calls a Server Action directly, the way a forged request would. */
-async function callAction(
-  session: Session,
-  path: string,
-  exportedName: string,
-  args: unknown[],
-) {
-  const response = await request(session, path, {
-    method: "POST",
-    headers: {
-      accept: "text/x-component",
-      "content-type": "text/plain;charset=UTF-8",
-      "next-action": actionId(exportedName),
-    },
-    body: JSON.stringify(args),
-  });
-  await response.text();
-  return response.status;
-}
-
-function actionId(exportedName: string): string {
-  const manifest = JSON.parse(
-    readFileSync(".next/dev/server/server-reference-manifest.json", "utf8"),
-  ) as { node: Record<string, { exportedName: string; filename: string }> };
-  const entry = Object.entries(manifest.node).find(
-    ([, action]) =>
-      action.exportedName === exportedName &&
-      action.filename.startsWith("lib/actions/"),
-  );
-  assert.ok(entry, `Server Action ${exportedName} not compiled yet`);
-  return entry[0];
-}
-
-// ---------- Users and seed data ----------
-
-async function createUser(name: string) {
-  const email = `isolation-${name}-${RUN}@example.com`;
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    password: crypto.randomUUID(),
-    email_confirm: true,
-  });
-  if (error) throw error;
-  await db.orm.public.Profile.create({
-    id: data.user.id,
-    username: `${name}.${RUN}`,
-    displayName: name,
-  });
-
-  const { data: link, error: linkError } =
-    await admin.auth.admin.generateLink({ type: "magiclink", email });
-  if (linkError) throw linkError;
-  const session: Session = { cookies: new Map() };
-  const response = await request(
-    session,
-    `/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/`,
-  );
-  assert.equal(response.headers.get("location"), "/", `${name} signs in`);
-  return { id: data.user.id, session };
-}
-
-let ana: Awaited<ReturnType<typeof createUser>>;
-let beto: Awaited<ReturnType<typeof createUser>>;
+let ana: TestUser;
+let beto: TestUser;
 const seed = {
   placeId: 0,
   visitId: 0,
@@ -165,21 +67,8 @@ before(async () => {
     visitId: visit.id,
     path: `tests/${RUN}/missing.jpg`,
   });
-  await db.orm.public.Restaurant.create({
-    ownerId: ana.id,
-    name: seed.pendingName,
-    lat: -34.6,
-    lng: -58.4,
-    status: "PENDING",
-    kind: "RESTAURANT",
-  });
-  const orphan = await db.orm.public.Restaurant.create({
-    name: seed.orphanName,
-    lat: -34.6,
-    lng: -58.4,
-    status: "PENDING",
-    kind: "RESTAURANT",
-  });
+  await seedPlace(ana.id, seed.pendingName);
+  const orphan = await seedPlace(null, seed.orphanName);
   Object.assign(seed, {
     placeId: place.id,
     visitId: visit.id,
@@ -196,12 +85,7 @@ before(async () => {
 
 after(async () => {
   await db.orm.public.Restaurant.where({ id: seed.orphanId }).delete();
-  for (const user of [ana, beto]) {
-    if (!user) continue;
-    // Deleting the profile cascades to its places, visits and categories.
-    await db.orm.public.Profile.where({ id: user.id }).delete();
-    await admin.auth.admin.deleteUser(user.id);
-  }
+  await deleteUsers([ana, beto]);
   await db.close();
 });
 
@@ -237,7 +121,14 @@ describe("lecturas", () => {
     });
   }
 
-  for (const path of ["/", "/pendientes", "/visitados", "/tipos", "/lugares/nuevo"]) {
+  for (const path of [
+    "/",
+    "/pendientes",
+    "/visitados",
+    "/tipos",
+    "/lugares/nuevo",
+    "/carpetas",
+  ]) {
     test(`Beto no ve nada de Ana en ${path}`, async () => {
       const { status, html } = await page(beto.session, path);
       assert.equal(status, 200);

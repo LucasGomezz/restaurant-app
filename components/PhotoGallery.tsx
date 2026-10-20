@@ -13,7 +13,7 @@ type PhotoGalleryProps = {
   photos: LightboxPhoto[];
   title: string;
   /** Server action that removes one photo by id. */
-  onDelete: (photoId: number) => Promise<void>;
+  onDelete?: (photoId: number) => Promise<void>;
 };
 
 /**

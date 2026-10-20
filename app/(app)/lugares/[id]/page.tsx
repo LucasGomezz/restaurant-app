@@ -5,10 +5,12 @@ import MapLoader from "@/components/MapLoader";
 import { VisitHeader } from "@/components/VisitHeader";
 import { VisitForm } from "@/components/VisitForm";
 import { VisitSections } from "@/components/VisitSections";
+import { addToFolderFromPlaceForm, removePlaceFromFolder } from "@/lib/actions/folders";
 import { addVisit, deleteRestaurant } from "@/lib/actions/restaurants";
 import { formatDate, formatDateRange, toDateInputValue } from "@/lib/format";
 import { typeOf } from "@/lib/places";
 import { getPlaceTypes } from "@/lib/queries/categories";
+import { getPlaceFolders } from "@/lib/queries/folders";
 import { getRestaurantDetail } from "@/lib/queries/restaurants";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +27,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
     getPlaceTypes(),
   ]);
   if (!data) notFound();
-  const { restaurant, visits } = data;
+  const { restaurant, visits, permissions, sharedBy } = data;
+  const { canEdit, isOwner } = permissions;
+  const folders = await getPlaceFolders(restaurant.id, isOwner);
   // The header shows the latest visit; older ones are listed below it.
   const [visit = null, ...olderVisits] = visits;
   const isVisited = restaurant.status === "VISITED";
@@ -77,6 +81,11 @@ export default async function RestaurantDetailPage({ params }: Props) {
               <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-semibold text-stone-600">
                 {kind.icon} {kind.label}
               </span>
+              {sharedBy && (
+                <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
+                  Compartido por {sharedBy.displayName}
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
               {restaurant.name}
@@ -145,26 +154,94 @@ export default async function RestaurantDetailPage({ params }: Props) {
             </div>
           )}
 
-          <div className="mt-auto flex flex-wrap gap-2 pt-2">
-            <Link
-              href={`/lugares/${restaurant.id}/editar`}
-              className="btn-secondary"
-            >
-              Editar datos
-            </Link>
-            <form action={deleteRestaurant.bind(null, restaurant.id)}>
-              <ConfirmButton
-                message={`¿Eliminar "${restaurant.name}"? Se borran también las visitas y todas las fotos.`}
+          {canEdit && (
+            <div className="mt-auto flex flex-wrap gap-2 pt-2">
+              <Link
+                href={`/lugares/${restaurant.id}/editar`}
+                className="btn-secondary"
               >
-                Eliminar
-              </ConfirmButton>
-            </form>
-          </div>
+                Editar datos
+              </Link>
+              {isOwner && (
+                <form action={deleteRestaurant.bind(null, restaurant.id)}>
+                  <ConfirmButton
+                    message={`¿Eliminar "${restaurant.name}"? Se borran también las visitas y todas las fotos, para todos con quienes lo compartiste.`}
+                  >
+                    Eliminar
+                  </ConfirmButton>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </VisitHeader>
 
+      {/* ---------- Folders it's shared in ---------- */}
+      {(folders.inFolders.length > 0 || folders.canAddTo.length > 0) && (
+        <section className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-stone-500">Carpetas:</span>
+          {folders.inFolders.map((folder) => (
+            <span
+              key={folder.id}
+              className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white py-1 pr-1 pl-3 text-sm shadow-xs"
+            >
+              <Link
+                href={`/carpetas/${folder.id}`}
+                className="font-medium text-stone-700 hover:text-brand-700"
+              >
+                {folder.icon} {folder.name}
+              </Link>
+              {folder.canRemove && (
+                <form
+                  action={removePlaceFromFolder.bind(
+                    null,
+                    restaurant.id,
+                    folder.id,
+                  )}
+                >
+                  <button
+                    type="submit"
+                    aria-label={`Sacar de ${folder.name}`}
+                    title="Sacar de la carpeta"
+                    className="grid size-6 cursor-pointer place-items-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </form>
+              )}
+            </span>
+          ))}
+          {folders.canAddTo.length > 0 && (
+            <form
+              action={addToFolderFromPlaceForm.bind(null, restaurant.id)}
+              className="flex items-center gap-1.5"
+            >
+              <select
+                name="folderId"
+                required
+                defaultValue=""
+                aria-label="Agregar a una carpeta"
+                className="rounded-full border border-dashed border-stone-300 bg-white px-3 py-1 text-sm text-stone-600"
+              >
+                <option value="" disabled>
+                  + Agregar a carpeta…
+                </option>
+                {folders.canAddTo.map((folder) => (
+                  <option key={folder.id} value={folder.id}>
+                    {folder.icon} {folder.name}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className="link cursor-pointer text-sm">
+                Agregar
+              </button>
+            </form>
+          )}
+        </section>
+      )}
+
       {/* ---------- Pending: mark as visited ---------- */}
-      {!visit && (
+      {!visit && canEdit && (
         <section className="card flex flex-col gap-5 p-5 sm:p-6">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold text-stone-900">
@@ -195,20 +272,23 @@ export default async function RestaurantDetailPage({ params }: Props) {
             visit={visit}
             restaurant={restaurant}
             isOnlyVisit={visits.length === 1}
+            canEdit={canEdit}
           />
 
-          <details className="group card">
-            <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
-              🔁 Volvimos: agregar otra visita
-            </summary>
-            <div className="border-t border-stone-200 p-5">
-              <VisitForm
-                action={addVisit.bind(null, restaurant.id)}
-                kind={restaurant.kind}
-                submitLabel="Guardar visita"
-              />
-            </div>
-          </details>
+          {canEdit && (
+            <details className="group card">
+              <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-semibold text-brand-600 transition select-none hover:text-brand-700">
+                🔁 Volvimos: agregar otra visita
+              </summary>
+              <div className="border-t border-stone-200 p-5">
+                <VisitForm
+                  action={addVisit.bind(null, restaurant.id)}
+                  kind={restaurant.kind}
+                  submitLabel="Guardar visita"
+                />
+              </div>
+            </details>
+          )}
         </>
       )}
 
