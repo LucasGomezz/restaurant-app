@@ -107,9 +107,32 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "ownerId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
               }
             },
-            "relations": {},
+            "relations": {
+              "owner": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "ownerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Profile",
+                  "namespace": "public"
+                }
+              }
+            },
             "storage": {
               "fields": {
                 "baseKind": {
@@ -126,6 +149,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "ownerId": {
+                  "column": "ownerId"
                 }
               },
               "namespaceId": "public",
@@ -317,7 +343,38 @@
                 }
               }
             },
-            "relations": {},
+            "relations": {
+              "categories": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "ownerId"
+                  ]
+                },
+                "to": {
+                  "model": "Category",
+                  "namespace": "public"
+                }
+              },
+              "places": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "ownerId"
+                  ]
+                },
+                "to": {
+                  "model": "Restaurant",
+                  "namespace": "public"
+                }
+              }
+            },
             "storage": {
               "fields": {
                 "createdAt": {
@@ -415,6 +472,13 @@
                   "kind": "scalar"
                 }
               },
+              "ownerId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "status": {
                 "nullable": false,
                 "type": {
@@ -442,6 +506,21 @@
                 },
                 "to": {
                   "model": "Category",
+                  "namespace": "public"
+                }
+              },
+              "owner": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "ownerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Profile",
                   "namespace": "public"
                 }
               },
@@ -492,6 +571,9 @@
                 },
                 "notes": {
                   "column": "notes"
+                },
+                "ownerId": {
+                  "column": "ownerId"
                 },
                 "status": {
                   "column": "status"
@@ -746,10 +828,43 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "ownerId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true,
+                  "typeRef": "AuthUserId"
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "ownerId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "category"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "profile"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "ownerId"
+                  ],
+                  "name": "category_ownerId_idx_e2d0c1ef",
+                  "prefix": "category_ownerId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -758,6 +873,7 @@
               "uniques": [
                 {
                   "columns": [
+                    "ownerId",
                     "name"
                   ]
                 }
@@ -1032,6 +1148,12 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "ownerId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true,
+                  "typeRef": "AuthUserId"
+                },
                 "status": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1045,6 +1167,23 @@
                 }
               },
               "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "ownerId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "restaurant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "profile"
+                  }
+                },
                 {
                   "onDelete": "setNull",
                   "source": {
@@ -1078,6 +1217,14 @@
                   ],
                   "name": "restaurant_kind_idx_c9ca668f",
                   "prefix": "restaurant_kind_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "ownerId"
+                  ],
+                  "name": "restaurant_ownerId_idx_e2d0c1ef",
+                  "prefix": "restaurant_ownerId_idx",
                   "unique": false
                 },
                 {
@@ -1216,7 +1363,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "fd4977cbaf2b60e69bf6feab66b088a4b7cc3f839268a9a664d04f15c04d9f84",
+    "storageHash": "d0aebb6fa76aa33f77c82ec7b292e027b2e8f23f2e9576296c64a337b3e967a3",
     "types": {
       "AuthUserId": {
         "codecId": "pg/uuid@1",

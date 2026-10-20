@@ -3,9 +3,20 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import {
+  assertCanEditDish,
+  assertCanEditPhoto,
+  assertCanEditPlace,
+  assertCanEditVisit,
+  categoriesOf,
+} from "@/lib/access";
 import { requireUser } from "@/lib/actions/guard";
 import { CATEGORY_KEY_PREFIX, isPlaceKind, type PlaceKind } from "@/lib/places";
 import { uploadPhoto, deletePhotos, imageRatio } from "@/lib/storage";
+
+// Ids bound into these actions come from the browser and can be forged:
+// every action checks access through lib/access.ts, which resolves the place
+// from the most specific id instead of trusting a place id sent along.
 
 export type FormState = { error: string } | undefined;
 
@@ -29,11 +40,18 @@ function files(formData: FormData, key: string): File[] {
     .filter((value): value is File => value instanceof File && value.size > 0);
 }
 
+/** Storage folder for a user's uploads of one kind, e.g. `u/<id>/dishes`. */
+function folder(userId: string, kind: "visits" | "places" | "dishes" | "gallery") {
+  return `u/${userId}/${kind}`;
+}
+
 /**
  * The `type` field is a built-in kind ("TRIP") or `c:<id>` for a custom
  * category, whose kind is read from the database, not trusted from the form.
+ * Only the user's own categories are accepted.
  */
 async function typeFromForm(
+  userId: string,
   formData: FormData,
 ): Promise<{ kind: PlaceKind; categoryId: number | null }> {
   const value = str(formData, "type");
@@ -41,7 +59,7 @@ async function typeFromForm(
     const id = Number(value.slice(CATEGORY_KEY_PREFIX.length));
     const category = Number.isInteger(id)
       ? await db.orm.public.Category.select("id", "baseKind")
-          .where({ id })
+          .where({ id, ...categoriesOf(userId) })
           .first()
       : null;
     if (category) return { kind: category.baseKind, categoryId: category.id };
@@ -74,12 +92,13 @@ type PlaceFields = {
 };
 
 async function placeFields(
+  userId: string,
   formData: FormData,
 ): Promise<PlaceFields | { error: string }> {
   const name = str(formData, "name");
   const lat = coord(formData, "lat");
   const lng = coord(formData, "lng");
-  const { kind, categoryId } = await typeFromForm(formData);
+  const { kind, categoryId } = await typeFromForm(userId, formData);
 
   if (!name) return { error: "El nombre es obligatorio." };
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -102,13 +121,14 @@ export async function createRestaurant(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
 
-  const fields = await placeFields(formData);
+  const fields = await placeFields(user.id, formData);
   if ("error" in fields) return fields;
 
   const restaurant = await db.orm.public.Restaurant.create({
     ...fields,
+    ownerId: user.id,
     status: "PENDING",
   });
 
@@ -120,26 +140,28 @@ export async function updateRestaurant(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { placeId } = await assertCanEditPlace(user.id, id);
 
-  const fields = await placeFields(formData);
+  const fields = await placeFields(user.id, formData);
   if ("error" in fields) return fields;
 
-  await db.orm.public.Restaurant.where({ id }).update(fields);
+  await db.orm.public.Restaurant.where({ id: placeId }).update(fields);
 
-  redirect(`/lugares/${id}`);
+  redirect(`/lugares/${placeId}`);
 }
 
 export async function deleteRestaurant(id: number) {
-  await requireUser();
+  const { user } = await requireUser();
+  const { placeId } = await assertCanEditPlace(user.id, id);
 
-  const restaurant = await db.orm.public.Restaurant.where({ id })
+  const restaurant = await db.orm.public.Restaurant.where({ id: placeId })
     .include("visits", (v) => v.include("dishes").include("photos"))
     .first();
 
   const paths = restaurant?.visits.flatMap(visitPhotoPaths) ?? [];
 
-  await db.orm.public.Restaurant.where({ id }).delete();
+  await db.orm.public.Restaurant.where({ id: placeId }).delete();
   await deletePhotos(paths);
 
   redirect("/pendientes");
@@ -168,7 +190,8 @@ export async function addVisit(
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { placeId } = await assertCanEditPlace(user.id, restaurantId);
 
   const visitDate = str(formData, "visitDate");
   const endDate = optionalStr(formData, "endDate");
@@ -188,12 +211,12 @@ export async function addVisit(
 
   const coupleImage = file(formData, "coupleImage");
   const coupleImageUrl = coupleImage
-    ? await uploadPhoto(coupleImage, `visits/${restaurantId}`)
+    ? await uploadPhoto(coupleImage, folder(user.id, "visits"))
     : null;
 
   const placeImage = file(formData, "placeImage");
   const placeImageUrl = placeImage
-    ? await uploadPhoto(placeImage, `places/${restaurantId}`)
+    ? await uploadPhoto(placeImage, folder(user.id, "places"))
     : null;
 
   const coupleImageRatio = coupleImage ? await imageRatio(coupleImage) : null;
@@ -210,7 +233,7 @@ export async function addVisit(
     const imageEntry = dishImages[i];
     const imagePath =
       imageEntry instanceof File && imageEntry.size > 0
-        ? await uploadPhoto(imageEntry, `dishes/${restaurantId}`)
+        ? await uploadPhoto(imageEntry, folder(user.id, "dishes"))
         : null;
     dishes.push({
       name,
@@ -219,15 +242,15 @@ export async function addVisit(
     });
   }
 
-  const photoPaths = await uploadAll(files(formData, "photos"), restaurantId);
+  const photoPaths = await uploadAll(files(formData, "photos"), user.id);
 
   await db.transaction(async (tx) => {
-    await tx.orm.public.Restaurant.where({ id: restaurantId }).update({
+    await tx.orm.public.Restaurant.where({ id: placeId }).update({
       status: "VISITED",
     });
 
     const visit = await tx.orm.public.Visit.create({
-      restaurantId,
+      restaurantId: placeId,
       visitDate,
       endDate,
       description,
@@ -254,14 +277,15 @@ export async function addVisit(
     }
   });
 
-  redirect(`/lugares/${restaurantId}`);
+  redirect(`/lugares/${placeId}`);
 }
 
 /** Removes a visit and its photos; with none left, the place is pending again. */
-export async function deleteVisit(visitId: number, restaurantId: number) {
-  await requireUser();
+export async function deleteVisit(id: number) {
+  const { user } = await requireUser();
+  const { visitId, placeId } = await assertCanEditVisit(user.id, id);
 
-  const visit = await db.orm.public.Visit.where({ id: visitId, restaurantId })
+  const visit = await db.orm.public.Visit.where({ id: visitId })
     .include("dishes")
     .include("photos")
     .first();
@@ -270,10 +294,10 @@ export async function deleteVisit(visitId: number, restaurantId: number) {
   await db.transaction(async (tx) => {
     await tx.orm.public.Visit.where({ id: visitId }).delete();
     const remaining = await tx.orm.public.Visit.select("id")
-      .where({ restaurantId })
+      .where({ restaurantId: placeId })
       .first();
     if (!remaining) {
-      await tx.orm.public.Restaurant.where({ id: restaurantId }).update({
+      await tx.orm.public.Restaurant.where({ id: placeId }).update({
         status: "PENDING",
       });
     }
@@ -281,16 +305,16 @@ export async function deleteVisit(visitId: number, restaurantId: number) {
   await deletePhotos(visitPhotoPaths(visit));
 
   // Its own page is gone, so always land on the place.
-  redirect(`/lugares/${restaurantId}`);
+  redirect(`/lugares/${placeId}`);
 }
 
 export async function updateVisit(
-  visitId: number,
-  restaurantId: number,
+  id: number,
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { visitId, placeId } = await assertCanEditVisit(user.id, id);
 
   const visitDate = str(formData, "visitDate");
   const endDate = optionalStr(formData, "endDate");
@@ -322,7 +346,7 @@ export async function updateVisit(
       replacedPaths.push(existing?.coupleImageUrl ?? null);
       coupleImageUrl = await uploadPhoto(
         newCoverImage,
-        `visits/${restaurantId}`,
+        folder(user.id, "visits"),
       );
       coupleImageRatio = await imageRatio(newCoverImage);
     }
@@ -330,7 +354,7 @@ export async function updateVisit(
       replacedPaths.push(existing?.placeImageUrl ?? null);
       placeImageUrl = await uploadPhoto(
         newPlaceImage,
-        `places/${restaurantId}`,
+        folder(user.id, "places"),
       );
       placeImageRatio = await imageRatio(newPlaceImage);
     }
@@ -348,26 +372,26 @@ export async function updateVisit(
 
   await deletePhotos(replacedPaths);
 
-  refreshPlace(restaurantId);
+  refreshPlace(placeId);
 }
 
 // ---------- Carousel photos ----------
 
-async function uploadAll(photos: File[], restaurantId: number) {
+async function uploadAll(photos: File[], userId: string) {
   const paths: string[] = [];
   for (const photo of photos) {
-    paths.push(await uploadPhoto(photo, `gallery/${restaurantId}`));
+    paths.push(await uploadPhoto(photo, folder(userId, "gallery")));
   }
   return paths;
 }
 
 export async function addPhotos(
-  visitId: number,
-  restaurantId: number,
+  id: number,
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { visitId, placeId } = await assertCanEditVisit(user.id, id);
 
   const photos = files(formData, "photos");
   if (photos.length === 0) return { error: "Elegí al menos una foto." };
@@ -378,16 +402,17 @@ export async function addPhotos(
     .first();
   const start = (last?.position ?? -1) + 1;
 
-  const paths = await uploadAll(photos, restaurantId);
+  const paths = await uploadAll(photos, user.id);
   await db.orm.public.Photo.createAll(
     paths.map((path, index) => ({ visitId, path, position: start + index })),
   );
 
-  refreshPlace(restaurantId);
+  refreshPlace(placeId);
 }
 
-export async function deletePhoto(restaurantId: number, photoId: number) {
-  await requireUser();
+export async function deletePhoto(id: number) {
+  const { user } = await requireUser();
+  const { photoId, placeId } = await assertCanEditPhoto(user.id, id);
 
   const photo = await db.orm.public.Photo.select("path")
     .where({ id: photoId })
@@ -397,25 +422,25 @@ export async function deletePhoto(restaurantId: number, photoId: number) {
   await db.orm.public.Photo.where({ id: photoId }).delete();
   await deletePhotos([photo.path]);
 
-  refreshPlace(restaurantId);
+  refreshPlace(placeId);
 }
 
 // ---------- Dishes ----------
 
 export async function addDish(
-  visitId: number,
-  restaurantId: number,
+  id: number,
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { visitId, placeId } = await assertCanEditVisit(user.id, id);
 
   const name = str(formData, "name");
   if (!name) return { error: "El plato necesita un nombre." };
 
   const image = file(formData, "image");
   const imageUrl = image
-    ? await uploadPhoto(image, `dishes/${restaurantId}`)
+    ? await uploadPhoto(image, folder(user.id, "dishes"))
     : null;
 
   await db.orm.public.Dish.create({
@@ -425,16 +450,16 @@ export async function addDish(
     imageUrl,
   });
 
-  refreshPlace(restaurantId);
+  refreshPlace(placeId);
 }
 
 export async function updateDish(
-  dishId: number,
-  restaurantId: number,
+  id: number,
   _prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { dishId, placeId } = await assertCanEditDish(user.id, id);
 
   const name = str(formData, "name");
   if (!name) return { error: "El plato necesita un nombre." };
@@ -448,7 +473,7 @@ export async function updateDish(
       .where({ id: dishId })
       .first();
     oldImageUrl = existing?.imageUrl ?? null;
-    imageUrl = await uploadPhoto(newImage, `dishes/${restaurantId}`);
+    imageUrl = await uploadPhoto(newImage, folder(user.id, "dishes"));
   }
 
   await db.orm.public.Dish.where({ id: dishId }).update({
@@ -461,11 +486,12 @@ export async function updateDish(
     await deletePhotos([oldImageUrl]);
   }
 
-  refreshPlace(restaurantId);
+  refreshPlace(placeId);
 }
 
-export async function deleteDish(dishId: number, restaurantId: number) {
-  await requireUser();
+export async function deleteDish(id: number) {
+  const { user } = await requireUser();
+  const { dishId, placeId } = await assertCanEditDish(user.id, id);
 
   const dish = await db.orm.public.Dish.select("imageUrl")
     .where({ id: dishId })
@@ -477,5 +503,5 @@ export async function deleteDish(dishId: number, restaurantId: number) {
     await deletePhotos([dish.imageUrl]);
   }
 
-  refreshPlace(restaurantId);
+  refreshPlace(placeId);
 }

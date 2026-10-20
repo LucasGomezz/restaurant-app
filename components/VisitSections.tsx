@@ -43,7 +43,7 @@ export function VisitSections({
         </summary>
         <div className="flex flex-col gap-5 border-t border-stone-200 p-5">
           <VisitForm
-            action={updateVisit.bind(null, visit.id, restaurant.id)}
+            action={updateVisit.bind(null, visit.id)}
             kind={restaurant.kind}
             defaultValues={{
               visitDate: toDateInputValue(visit.visitDate),
@@ -53,7 +53,7 @@ export function VisitSections({
             submitLabel="Guardar cambios"
           />
           <form
-            action={deleteVisit.bind(null, visit.id, restaurant.id)}
+            action={deleteVisit.bind(null, visit.id)}
             className="border-t border-stone-200 pt-4"
           >
             <ConfirmButton
@@ -80,13 +80,13 @@ export function VisitSections({
             photos={visit.photos}
             title={restaurant.name}
             subtitle={formatDateRange(visit.visitDate, visit.endDate)}
-            onDelete={deletePhoto.bind(null, restaurant.id)}
+            onDelete={deletePhoto}
           />
         ) : visit.photos.length > 0 ? (
           <PhotoGallery
             photos={visit.photos}
             title={restaurant.name}
-            onDelete={deletePhoto.bind(null, restaurant.id)}
+            onDelete={deletePhoto}
           />
         ) : (
           <p className="text-sm text-stone-500">Todavía no hay fotos.</p>
@@ -97,7 +97,7 @@ export function VisitSections({
           </summary>
           <div className="border-t border-stone-200 p-4">
             <AddPhotosForm
-              action={addPhotos.bind(null, visit.id, restaurant.id)}
+              action={addPhotos.bind(null, visit.id)}
             />
           </div>
         </details>
@@ -152,12 +152,12 @@ export function VisitSections({
                       </summary>
                       <div className="mt-3 flex flex-col gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3.5">
                         <DishForm
-                          action={updateDish.bind(null, dish.id, restaurant.id)}
+                          action={updateDish.bind(null, dish.id)}
                           defaultValues={dish}
                           submitLabel="Guardar"
                         />
                         <form
-                          action={deleteDish.bind(null, dish.id, restaurant.id)}
+                          action={deleteDish.bind(null, dish.id)}
                           className="border-t border-stone-200 pt-3"
                         >
                           <ConfirmButton
@@ -181,7 +181,7 @@ export function VisitSections({
             </summary>
             <div className="border-t border-stone-200 p-4">
               <DishForm
-                action={addDish.bind(null, visit.id, restaurant.id)}
+                action={addDish.bind(null, visit.id)}
                 submitLabel="Agregar plato"
               />
             </div>

@@ -1,0 +1,332 @@
+[
+  {
+    "id": "dropConstraint.category.category_name_key",
+    "label": "Drop constraint \"category_name_key\" on \"category\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "category_name_key",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"category_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"category_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"category\" DROP CONSTRAINT \"category_name_key\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"category_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.category.ownerId",
+    "label": "Add column \"ownerId\" to \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "ownerId",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"ownerId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "category",
+          "ownerId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"ownerId\"",
+        "sql": "ALTER TABLE \"public\".\"category\" ADD COLUMN \"ownerId\" \"uuid\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"ownerId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "category",
+          "ownerId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.restaurant.ownerId",
+    "label": "Add column \"ownerId\" to \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "ownerId",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"ownerId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "restaurant",
+          "ownerId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"ownerId\"",
+        "sql": "ALTER TABLE \"public\".\"restaurant\" ADD COLUMN \"ownerId\" \"uuid\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"ownerId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "restaurant",
+          "ownerId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.category.category_ownerId_name_key",
+    "label": "Add unique constraint on \"category\" (ownerId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "category_ownerId_name_key",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"category_ownerId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_ownerId_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"category_ownerId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"category\" ADD CONSTRAINT \"category_ownerId_name_key\" UNIQUE (\"ownerId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"category_ownerId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_ownerId_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.category.category_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"category_ownerId_idx_e2d0c1ef\" on \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "category_ownerId_idx_e2d0c1ef",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"category_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"category_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"category_ownerId_idx_e2d0c1ef\" ON \"public\".\"category\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"category_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.restaurant.restaurant_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"restaurant_ownerId_idx_e2d0c1ef\" on \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "restaurant_ownerId_idx_e2d0c1ef",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"restaurant_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"restaurant_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"restaurant_ownerId_idx_e2d0c1ef\" ON \"public\".\"restaurant\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"restaurant_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.category.category_ownerId_fkey",
+    "label": "Add foreign key \"category_ownerId_fkey\" on \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "category_ownerId_fkey",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"category_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_ownerId_fkey",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"category_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"category\"\nADD CONSTRAINT \"category_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"profile\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"category_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_ownerId_fkey",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.restaurant.restaurant_ownerId_fkey",
+    "label": "Add foreign key \"restaurant_ownerId_fkey\" on \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "restaurant_ownerId_fkey",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"restaurant_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "restaurant_ownerId_fkey",
+          "public",
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"restaurant_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"restaurant\"\nADD CONSTRAINT \"restaurant_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"profile\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"restaurant_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "restaurant_ownerId_fkey",
+          "public",
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ]
+  }
+]

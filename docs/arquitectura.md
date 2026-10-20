@@ -137,9 +137,12 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 - [x] Login real: registro, recuperar contraseña, perfil con username (`/bienvenida`)
 - [ ] Login con Google
 - [ ] SMTP propio (Resend) para los emails de Auth
-- [ ] Esquema nuevo (`contract.prisma`) + migraciones
-- [ ] Script que migra los datos actuales a un usuario y una carpeta compartida
-- [ ] Módulo de permisos `lib/access.ts` con tests
+- [x] Dueño en lugares y tipos (`ownerId`); tipos únicos por usuario
+- [x] Script `scripts/claim-data.ts`: asigna los datos sin dueño a un usuario
+- [x] Módulo de permisos `lib/access.ts` + `npm run test:isolation` (dos usuarios,
+      lecturas y Server Actions con ids ajenos)
+- [ ] Hacer `ownerId` obligatorio (NOT NULL) una vez asignados los datos en producción
+- [ ] IDs UUID (decisión 7): pendiente de confirmar si se migran las tablas existentes
 - [ ] Capa de fotos con miniaturas y cuota
 - [x] Sacar el mural de fotos privadas del login
 

@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'fd4977cbaf2b60e69bf6feab66b088a4b7cc3f839268a9a664d04f15c04d9f84'>;
+  StorageHashBase<'d0aebb6fa76aa33f77c82ec7b292e027b2e8f23f2e9576296c64a337b3e967a3'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -242,6 +242,7 @@ export type FieldOutputTypes = {
   readonly public: {
     readonly Category: {
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly ownerId: CodecTypes['pg/uuid@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly icon: CodecTypes['pg/text@1']['output'];
       readonly baseKind: 'RESTAURANT' | 'TRIP' | 'EVENT';
@@ -269,6 +270,7 @@ export type FieldOutputTypes = {
     };
     readonly Restaurant: {
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly ownerId: CodecTypes['pg/uuid@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly address: CodecTypes['pg/text@1']['output'] | null;
       readonly lat: CodecTypes['pg/float8@1']['output'];
@@ -298,6 +300,7 @@ export type FieldInputTypes = {
   readonly public: {
     readonly Category: {
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly ownerId: CodecTypes['pg/uuid@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly icon: CodecTypes['pg/text@1']['input'];
       readonly baseKind: 'RESTAURANT' | 'TRIP' | 'EVENT';
@@ -325,6 +328,7 @@ export type FieldInputTypes = {
     };
     readonly Restaurant: {
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly ownerId: CodecTypes['pg/uuid@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly address: CodecTypes['pg/text@1']['input'] | null;
       readonly lat: CodecTypes['pg/float8@1']['input'];
@@ -358,6 +362,7 @@ export type StorageColumnTypes = {
       readonly icon: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/uuid@1']['output'] | null;
     };
     readonly dish: {
       readonly description: CodecTypes['pg/text@1']['output'] | null;
@@ -390,6 +395,7 @@ export type StorageColumnTypes = {
       readonly lng: CodecTypes['pg/float8@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
+      readonly ownerId: CodecTypes['pg/uuid@1']['output'] | null;
       readonly status: 'PENDING' | 'VISITED';
     };
     readonly visit: {
@@ -414,6 +420,7 @@ export type StorageColumnInputTypes = {
       readonly icon: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/uuid@1']['input'] | null;
     };
     readonly dish: {
       readonly description: CodecTypes['pg/text@1']['input'] | null;
@@ -446,6 +453,7 @@ export type StorageColumnInputTypes = {
       readonly lng: CodecTypes['pg/float8@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
+      readonly ownerId: CodecTypes['pg/uuid@1']['input'] | null;
       readonly status: 'PENDING' | 'VISITED';
     };
     readonly visit: {
@@ -491,6 +499,12 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                 };
+                readonly ownerId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                  readonly typeRef: 'AuthUserId';
+                };
                 readonly name: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -514,9 +528,29 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['name'] }];
-              indexes: readonly [];
-              foreignKeys: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['ownerId', 'name'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'category_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'category_ownerId_idx';
+                  readonly columns: readonly ['ownerId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'category';
+                    readonly columns: readonly ['ownerId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'profile';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly dish: {
               columns: {
@@ -678,6 +712,12 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                 };
+                readonly ownerId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                  readonly typeRef: 'AuthUserId';
+                };
                 readonly name: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -738,6 +778,12 @@ type ContractBase = Omit<
               uniques: readonly [];
               indexes: readonly [
                 {
+                  readonly name: 'restaurant_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'restaurant_ownerId_idx';
+                  readonly columns: readonly ['ownerId'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'restaurant_status_idx_e98638ab';
                   readonly prefix: 'restaurant_status_idx';
                   readonly columns: readonly ['status'];
@@ -757,6 +803,18 @@ type ContractBase = Omit<
                 },
               ];
               foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'restaurant';
+                    readonly columns: readonly ['ownerId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'profile';
+                    readonly columns: readonly ['id'];
+                  };
+                },
                 {
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
@@ -903,6 +961,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly ownerId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -923,12 +985,25 @@ type ContractBase = Omit<
                 };
               };
             };
-            readonly relations: Record<string, never>;
+            readonly relations: {
+              readonly owner: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Profile';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['ownerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
             readonly storage: {
               readonly table: 'category';
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly ownerId: { readonly column: 'ownerId' };
                 readonly name: { readonly column: 'name' };
                 readonly icon: { readonly column: 'icon' };
                 readonly baseKind: { readonly column: 'baseKind' };
@@ -1057,7 +1132,30 @@ type ContractBase = Omit<
                 };
               };
             };
-            readonly relations: Record<string, never>;
+            readonly relations: {
+              readonly categories: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Category';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['ownerId'];
+                };
+              };
+              readonly places: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Restaurant';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['ownerId'];
+                };
+              };
+            };
             readonly storage: {
               readonly table: 'profile';
               readonly namespaceId: 'public';
@@ -1074,6 +1172,10 @@ type ContractBase = Omit<
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly ownerId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
               readonly name: {
                 readonly nullable: false;
@@ -1134,6 +1236,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly owner: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Profile';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['ownerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly visits: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -1151,6 +1264,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly ownerId: { readonly column: 'ownerId' };
                 readonly name: { readonly column: 'name' };
                 readonly address: { readonly column: 'address' };
                 readonly lat: { readonly column: 'lat' };

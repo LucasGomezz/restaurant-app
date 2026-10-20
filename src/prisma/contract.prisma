@@ -21,6 +21,10 @@ enum PlaceKind {
 // Historical name: holds every place (restaurants, trips and events).
 model Restaurant {
   id        Int              @id @default(autoincrement())
+  /// Who created the place. Null only for rows from before accounts existed,
+  /// until scripts/claim-data.ts assigns them: nobody sees an ownerless place.
+  ownerId   AuthUserId?
+  owner     Profile?          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name      String
   address   String?
   lat       Float
@@ -36,6 +40,7 @@ model Restaurant {
   createdAt TimestamptzString @default(now())
   visits    Visit[]
 
+  @@index([ownerId])
   @@index([status])
   @@index([kind])
   @@index([categoryId])
@@ -49,10 +54,15 @@ model Restaurant {
 // like a built-in kind: dishes for restaurants, return date for trips...
 model Category {
   id        Int               @id @default(autoincrement())
-  name      String            @unique
+  /// Each user has their own types. Null only for rows from before accounts.
+  ownerId   AuthUserId?
+  owner     Profile?          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name      String
   icon      String
   baseKind  PlaceKind
   createdAt TimestamptzString @default(now())
+
+  @@unique([ownerId, name])
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.
@@ -123,6 +133,8 @@ model Profile {
   username    String            @unique
   displayName String
   createdAt   TimestamptzString @default(now())
+  places      Restaurant[]
+  categories  Category[]
 
   // RLS on with no policies: the public API (anon key) gets nothing;
   // the app connects as the table owner, which bypasses RLS.

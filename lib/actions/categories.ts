@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { assertCanEditCategory, categoriesOf } from "@/lib/access";
 import { requireUser } from "@/lib/actions/guard";
 import {
   isPlaceKind,
@@ -25,6 +26,7 @@ function graphemes(text: string) {
 
 /** Validates the input; `exceptId` lets a category keep its own name. */
 async function categoryFields(
+  userId: string,
   input: CategoryInput,
   exceptId?: number,
 ): Promise<CategoryFields | { error: string }> {
@@ -44,7 +46,9 @@ async function categoryFields(
   const builtin = KIND_ORDER.some(
     (kind) => taken(KINDS[kind].label) || taken(KINDS[kind].plural),
   );
-  const existing = await db.orm.public.Category.select("id", "name").all();
+  const existing = await db.orm.public.Category.select("id", "name")
+    .where(categoriesOf(userId))
+    .all();
   if (builtin || existing.some((c) => c.id !== exceptId && taken(c.name))) {
     return { error: `Ya existe un tipo llamado "${name}".` };
   }
@@ -59,13 +63,15 @@ function revalidateAll() {
 export async function createCategory(
   input: CategoryInput,
 ): Promise<CategoryResult> {
-  await requireUser();
+  const { user } = await requireUser();
 
-  const fields = await categoryFields(input);
+  const fields = await categoryFields(user.id, input);
   if ("error" in fields) return fields;
 
-  const { id, name, icon, baseKind } =
-    await db.orm.public.Category.create(fields);
+  const { id, name, icon, baseKind } = await db.orm.public.Category.create({
+    ...fields,
+    ownerId: user.id,
+  });
 
   revalidateAll();
   return { category: { id, name, icon, baseKind } };
@@ -75,28 +81,30 @@ export async function updateCategory(
   id: number,
   input: CategoryInput,
 ): Promise<CategoryResult> {
-  await requireUser();
+  const { user } = await requireUser();
+  const { categoryId } = await assertCanEditCategory(user.id, id);
 
-  const fields = await categoryFields(input, id);
+  const fields = await categoryFields(user.id, input, categoryId);
   if ("error" in fields) return fields;
 
   // Places of the category follow its new base behaviour.
   await db.transaction(async (tx) => {
-    await tx.orm.public.Category.where({ id }).update(fields);
-    await tx.orm.public.Restaurant.where({ categoryId: id }).update({
+    await tx.orm.public.Category.where({ id: categoryId }).update(fields);
+    await tx.orm.public.Restaurant.where({ categoryId }).update({
       kind: fields.baseKind,
     });
   });
 
   revalidateAll();
-  return { category: { id, ...fields } };
+  return { category: { id: categoryId, ...fields } };
 }
 
 /** Its places stay, shown again as their base kind (the FK sets null). */
 export async function deleteCategory(id: number) {
-  await requireUser();
+  const { user } = await requireUser();
+  const { categoryId } = await assertCanEditCategory(user.id, id);
 
-  await db.orm.public.Category.where({ id }).delete();
+  await db.orm.public.Category.where({ id: categoryId }).delete();
 
   revalidateAll();
 }

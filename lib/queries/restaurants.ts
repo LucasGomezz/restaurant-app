@@ -1,10 +1,20 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { placesVisibleTo } from "@/lib/access";
+import { requireProfile } from "@/lib/auth/session";
 import { typeOf, type PlaceType } from "@/lib/places";
 import { getSignedUrls } from "@/lib/storage";
 import type { RestaurantMarker } from "@/lib/types";
 
 // The `Restaurant` model holds every place: restaurants, trips and events.
+// Every query here reads the signed-in user itself and only returns what
+// lib/access.ts lets them see, so a page can't forget the filter.
+
+/** The places the signed-in user may see. */
+async function visiblePlaces() {
+  const { user } = await requireProfile();
+  return placesVisibleTo(user.id);
+}
 
 type PlaceQuery = ReturnType<typeof db.orm.public.Restaurant.where>;
 
@@ -38,7 +48,10 @@ export async function getRestaurantMarkers(
   types: PlaceType[],
   type?: PlaceType,
 ): Promise<RestaurantMarker[]> {
-  const rows = await ofType(db.orm.public.Restaurant.where({}), type)
+  const rows = await ofType(
+    db.orm.public.Restaurant.where(await visiblePlaces()),
+    type,
+  )
     .select(
       "id",
       "name",
@@ -96,7 +109,10 @@ export async function getRestaurantMarkers(
 
 export async function getPendingRestaurants(type?: PlaceType) {
   const rows = await ofType(
-    db.orm.public.Restaurant.where({ status: "PENDING" }),
+    db.orm.public.Restaurant.where({
+      ...(await visiblePlaces()),
+      status: "PENDING",
+    }),
     type,
   )
     .select(
@@ -125,7 +141,10 @@ export async function getPendingRestaurants(type?: PlaceType) {
 /** One card per place: dated by its latest visit, with its latest cover. */
 export async function getVisitedRestaurants(type?: PlaceType) {
   const rows = await ofType(
-    db.orm.public.Restaurant.where({ status: "VISITED" }),
+    db.orm.public.Restaurant.where({
+      ...(await visiblePlaces()),
+      status: "VISITED",
+    }),
     type,
   )
     .select("id", "name", "kind", "categoryId")
@@ -174,7 +193,10 @@ export async function getVisitedRestaurants(type?: PlaceType) {
 
 /** The place with every visit (newest first) and their signed photo URLs. */
 export async function getRestaurantDetail(id: number) {
-  const restaurant = await db.orm.public.Restaurant.where({ id })
+  const restaurant = await db.orm.public.Restaurant.where({
+    ...(await visiblePlaces()),
+    id,
+  })
     .include("visits", (v) =>
       v
         .include("dishes", (d) => d.orderBy((row) => row.id.asc()))
@@ -218,6 +240,24 @@ export async function getRestaurantDetail(id: number) {
 /** Every location already used, for picking the same spot again. */
 export async function getKnownLocations() {
   return db.orm.public.Restaurant.select("name", "address", "lat", "lng")
+    .where(await visiblePlaces())
     .orderBy((r) => r.createdAt.desc())
     .all();
+}
+
+/** The fields of a place for its edit form; null if it isn't visible. */
+export async function getPlaceForEdit(id: number) {
+  return db.orm.public.Restaurant.select(
+    "id",
+    "name",
+    "address",
+    "notes",
+    "kind",
+    "categoryId",
+    "eventDate",
+    "lat",
+    "lng",
+  )
+    .where({ ...(await visiblePlaces()), id })
+    .first();
 }
