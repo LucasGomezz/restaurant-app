@@ -1,8 +1,9 @@
 # Beta privada: la versión nueva online, sin tocar la app vieja
 
-La app vieja sigue en su dirección y con su base de siempre. La beta es un
-**segundo proyecto de Vercel** que publica la rama `feature/multiusuario`
-contra el proyecto de Supabase de **desarrollo**, con una copia de tus datos.
+La app vieja (repo `nuestroCamino`) sigue en su dirección y con su base de
+siempre. La nueva es un **segundo proyecto de Vercel** que publica `main` de
+este repo (`restaurant-app`) contra el proyecto de Supabase de **desarrollo**,
+que tiene una copia de tus datos.
 
 ## 1. Copiar tus datos de la app vieja (solo lectura sobre la vieja)
 
@@ -59,8 +60,8 @@ modifica ni borra nada.
    | `NOMINATIM_CONTACT` | Tu email |
 
    No cargues `ALLOWED_EMAILS`.
-3. **Settings → Git → Production Branch**: `feature/multiusuario`. Después
-   **Deployments → Redeploy** el último deploy de esa rama.
+3. Si el primer deploy salió antes de cargar las variables, **Deployments →
+   Redeploy** el último deploy de `main` para que las tome.
 4. Abrí la URL: tiene que aparecer la landing.
 
 ## 4. Invitar a tu novia
