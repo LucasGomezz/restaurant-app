@@ -4,11 +4,12 @@
  * READ: its database gets SELECTs and its photos are downloaded, never
  * changed or deleted, so it keeps working exactly as before.
  *
- *   node --env-file=.env --env-file=.env.old scripts/import-old-app.ts <username> --carpeta "Nosotros"          # dry run
- *   node --env-file=.env --env-file=.env.old scripts/import-old-app.ts <username> --carpeta "Nosotros" --apply
+ *   node --env-file=.env.old --env-file=.env scripts/import-old-app.ts <username> --carpeta "Nosotros"          # dry run
+ *   node --env-file=.env.old --env-file=.env scripts/import-old-app.ts <username> --carpeta "Nosotros" --apply
  *
  * .env     → where the data goes (this app: DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL,
- *            SUPABASE_SERVICE_ROLE_KEY).
+ *            SUPABASE_SERVICE_ROLE_KEY). Loaded LAST, so if .env.old repeats one
+ *            of these names, the destination still wins: never the old app.
  * .env.old → where it comes from: OLD_DATABASE_URL, OLD_SUPABASE_URL,
  *            OLD_SUPABASE_SERVICE_ROLE_KEY (the old app's project), and
  *            OLD_DATABASE_SCHEMA if its tables aren't in `public` (tests).
@@ -44,7 +45,7 @@ function env(name: string) {
 }
 
 if (!rawUsername) {
-  console.error('Uso: node --env-file=.env --env-file=.env.old scripts/import-old-app.ts <username> [--carpeta "Nosotros"] [--apply]');
+  console.error('Uso: node --env-file=.env.old --env-file=.env scripts/import-old-app.ts <username> [--carpeta "Nosotros"] [--apply]');
   process.exit(1);
 }
 const username = rawUsername.replace(/^@/, "").toLowerCase();

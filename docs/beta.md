@@ -20,13 +20,13 @@ contra el proyecto de Supabase de **desarrollo**, con una copia de tus datos.
 2. Probá sin copiar nada:
 
    ```bash
-   node --env-file=.env --env-file=.env.old scripts/import-old-app.ts pantera --carpeta "Nosotros"
+   node --env-file=.env.old --env-file=.env scripts/import-old-app.ts pantera --carpeta "Nosotros"
    ```
 
 3. Si los números cuadran, copiá:
 
    ```bash
-   node --env-file=.env --env-file=.env.old scripts/import-old-app.ts pantera --carpeta "Nosotros" --apply
+   node --env-file=.env.old --env-file=.env scripts/import-old-app.ts pantera --carpeta "Nosotros" --apply
    ```
 
 Copia lugares, visitas, platos, fotos (también los archivos) y tipos a tu
