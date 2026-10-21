@@ -137,13 +137,26 @@ export async function createUser(name: string): Promise<TestUser> {
   return { id: data.user.id, name, session };
 }
 
+/** Whether the Supabase Auth user still exists. */
+export async function authUserExists(id: string) {
+  const { data } = await admin.auth.admin.getUserById(id);
+  return Boolean(data.user);
+}
+
 /**
- * Deletes the users with everything they own (the profile cascades to
- * places, visits, categories and memberships) and the given folders.
+ * Deletes the users with everything they own: the folders they own, and
+ * through the profile, places, visits, categories, memberships, friendships.
  */
 export async function deleteUsers(users: (TestUser | undefined)[]) {
   for (const user of users) {
     if (!user) continue;
+    // Folders aren't tied to a profile row: drop the ones the user owned.
+    const owned = await db.orm.public.FolderMember.select("folderId")
+      .where({ userId: user.id, role: "OWNER" })
+      .all();
+    for (const { folderId } of owned) {
+      await db.orm.public.Folder.where({ id: folderId }).delete();
+    }
     await db.orm.public.Profile.where({ id: user.id }).delete();
     await admin.auth.admin.deleteUser(user.id);
   }

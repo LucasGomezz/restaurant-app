@@ -14,15 +14,16 @@ export type SidebarFolder = {
 };
 
 const SECTIONS = [
-  { href: "/", label: "Mapa", icon: "🗺️" },
+  { href: "/mapa", label: "Mapa", icon: "🗺️" },
   { href: "/pendientes", label: "Pendientes", icon: "📍" },
   { href: "/visitados", label: "Visitados", icon: "📸" },
   { href: "/tipos", label: "Tipos", icon: "🏷️" },
   { href: "/amigos", label: "Amigos", icon: "👥" },
+  { href: "/cuenta", label: "Mi cuenta", icon: "⚙️" },
 ];
 
 function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  return pathname.startsWith(href);
 }
 
 /**
@@ -84,7 +85,7 @@ export function AppShell({
             )}
           </button>
           <Link
-            href="/"
+            href="/mapa"
             className="flex shrink-0 items-center gap-2 font-semibold text-stone-900"
           >
             <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-base text-white shadow-sm">
@@ -100,12 +101,13 @@ export function AppShell({
             <span>Agregar</span>
           </Link>
           <form action={logout} className="flex items-center">
-            <span
-              className="hidden max-w-32 truncate pl-1 text-sm text-stone-500 md:inline"
-              title={`@${username}`}
+            <Link
+              href="/cuenta"
+              className="hidden max-w-36 truncate rounded-lg px-2 py-1.5 text-sm text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 md:inline"
+              title="Mi cuenta"
             >
               @{username}
-            </span>
+            </Link>
             <button
               type="submit"
               title="Cerrar sesión"

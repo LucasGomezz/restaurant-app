@@ -122,7 +122,7 @@ describe("lecturas", () => {
   }
 
   for (const path of [
-    "/",
+    "/mapa",
     "/pendientes",
     "/visitados",
     "/tipos",

@@ -67,7 +67,7 @@ test("sin sesión no hay vista previa", async () => {
 });
 
 test("los pines del mapa ya no traen fotos ni comentarios", async () => {
-  const { html } = await page(ana.session, "/");
+  const { html } = await page(ana.session, "/mapa");
   assert.ok(html.includes(`Con vista previa ${RUN}`), "el pin está");
   assert.ok(!html.includes(`Comentario ${RUN}`), "el comentario no viene con el mapa");
 });

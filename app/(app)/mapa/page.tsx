@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FolderFilter } from "@/components/FolderFilter";
 import { KindFilter } from "@/components/KindFilter";
 import MapLoader from "@/components/MapLoader";
@@ -8,7 +9,7 @@ import { getRestaurantMarkers } from "@/lib/queries/restaurants";
 
 export const dynamic = "force-dynamic";
 
-export default async function MapPage(props: PageProps<"/">) {
+export default async function MapPage(props: PageProps<"/mapa">) {
   const { tipo, carpeta } = await props.searchParams;
   const [types, folders] = await Promise.all([getPlaceTypes(), getMyFolders()]);
   const type = typeFromSlug(types, tipo);
@@ -17,6 +18,8 @@ export default async function MapPage(props: PageProps<"/">) {
   const places = await getRestaurantMarkers(types, type, folder?.id);
   const visited = places.filter((p) => p.status === "VISITED").length;
   const pending = places.length - visited;
+  // A brand-new account: nothing on the map and no filter applied.
+  const isNewUser = places.length === 0 && !type && !folder;
 
   return (
     <div className="relative flex min-h-0 flex-1">
@@ -32,7 +35,7 @@ export default async function MapPage(props: PageProps<"/">) {
           active={folder?.id}
         />
         <KindFilter
-          basePath="/"
+          basePath="/mapa"
           types={types}
           active={type}
           compact
@@ -57,6 +60,48 @@ export default async function MapPage(props: PageProps<"/">) {
           </span>
         </span>
       </div>
+      {isNewUser && (
+        <div className="pointer-events-none absolute inset-0 z-[600] grid place-items-center p-4">
+          <div className="card pointer-events-auto flex w-full max-w-md flex-col gap-4 p-6 shadow-xl">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-xl font-semibold text-stone-900">
+                ¡Bienvenido a tu mapa! 👋
+              </h2>
+              <p className="text-sm text-stone-600">
+                Así se empieza, en tres pasos:
+              </p>
+            </div>
+            <ol className="flex flex-col gap-3 text-sm text-stone-700">
+              <li className="flex gap-3">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+                  1
+                </span>
+                Agregá un lugar que quieras conocer, o uno donde ya fuiste.
+              </li>
+              <li className="flex gap-3">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+                  2
+                </span>
+                Creá una carpeta para cada grupo: tu pareja, amigos, un viaje.
+              </li>
+              <li className="flex gap-3">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+                  3
+                </span>
+                Invitá a tu gente: ven solo lo que sumes a la carpeta.
+              </li>
+            </ol>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Link href="/lugares/nuevo" className="btn-primary flex-1">
+                + Agregar un lugar
+              </Link>
+              <Link href="/carpetas/nueva" className="btn-secondary flex-1">
+                Crear una carpeta
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

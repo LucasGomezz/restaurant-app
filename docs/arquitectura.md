@@ -179,10 +179,17 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 - [x] Filtro por carpeta en el mapa (`?carpeta=`)
 - [x] Geocoding detrás de `lib/geocoding.ts` (Nominatim por defecto, Geoapify
       con `GEOAPIFY_API_KEY`) y caché de 30 días en la tabla `geocodeCache`
+- [x] Respaldo sin WebGL2: `MapLoader` usa Leaflet con mosaicos de OpenStreetMap
+      cuando el navegador no puede dibujar MapLibre (o falla al iniciar)
 - [ ] Pedir solo los pines de la zona visible (cuando haya miles de lugares)
 
 ### Fase 4 — Lanzamiento
-- [ ] Landing, onboarding, términos y privacidad, dominio, Vercel Pro
+- [x] Landing pública en `/` (el mapa pasa a `/mapa`); robots.txt e indexación
+      solo de lo público
+- [x] `/terminos` y `/privacidad` (borrador; datos del responsable por env)
+- [x] Mi cuenta (`/cuenta`): nombre visible y eliminar la cuenta con todos sus datos
+- [x] Bienvenida en el mapa vacío
+- [ ] Dominio, emails con Resend, Vercel y base de producción: ver `docs/lanzamiento.md`
 
 ### Fase 5 — Monetización
 - [ ] Límites del plan free, checkout, portal de suscripción

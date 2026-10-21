@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { ProfileForm } from "@/components/AuthForms";
 import { logout } from "@/lib/actions/auth";
 import { getCurrentUser, getProfile } from "@/lib/auth/session";
 import { safeNextPath, suggestUsername } from "@/lib/auth/validation";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /** First step after signing up: pick a name and a @username. */
 export default async function BienvenidaPage(props: PageProps<"/bienvenida">) {

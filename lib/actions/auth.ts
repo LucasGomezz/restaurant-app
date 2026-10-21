@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser, getProfile } from "@/lib/auth/session";
 import {
+  APP_HOME,
   PASSWORD_MIN_LENGTH,
   normalizeUsername,
   safeNextPath,
@@ -72,7 +73,7 @@ export async function signup(
   // After confirming: create the profile, then go where they were heading.
   const next = safeNextPath(str(formData, "next"));
   const welcome =
-    next === "/" ? "/bienvenida" : `/bienvenida?next=${encodeURIComponent(next)}`;
+    next === APP_HOME ? "/bienvenida" : `/bienvenida?next=${encodeURIComponent(next)}`;
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -155,7 +156,7 @@ export async function updatePassword(
     };
   }
 
-  redirect("/");
+  redirect(APP_HOME);
 }
 
 export async function createProfile(

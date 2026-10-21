@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/AppShell";
 import { requireProfile } from "@/lib/auth/session";
 import { getMyFolders } from "@/lib/queries/folders";
 import { getReceivedRequestCount } from "@/lib/queries/friends";
 import { SIDEBAR_COOKIE } from "@/lib/sidebar";
+
+// Signed-in pages: nothing here for search engines.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   // Signed-in users without a profile finish setting it up first.

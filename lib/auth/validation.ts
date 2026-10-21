@@ -57,12 +57,15 @@ export function suggestUsername(email: string | undefined): string {
     .slice(0, USERNAME_MAX_LENGTH);
 }
 
+/** Where signed-in users land by default (/ is the public landing page). */
+export const APP_HOME = "/mapa";
+
 /**
  * Only same-site paths are allowed as post-login destinations, so a crafted
  * link can't bounce the user to another site.
  */
 export function safeNextPath(value: string | null | undefined): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
-  if (value.startsWith("/\\")) return "/";
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return APP_HOME;
+  if (value.startsWith("/\\")) return APP_HOME;
   return value;
 }

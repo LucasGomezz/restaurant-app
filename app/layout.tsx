@@ -21,8 +21,6 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: "Nuestro Camino",
   description: "Los lugares que queremos conocer, juntos.",
-  // Private app: keep it out of search engines.
-  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

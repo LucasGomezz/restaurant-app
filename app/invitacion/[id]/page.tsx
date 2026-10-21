@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
 import { acceptInvite } from "@/lib/actions/folders";
 import { getCurrentUser, getProfile } from "@/lib/auth/session";
 import { getInvite } from "@/lib/queries/folders";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export const dynamic = "force-dynamic";
 

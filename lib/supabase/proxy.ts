@@ -4,7 +4,8 @@ import { safeNextPath } from "@/lib/auth/validation";
 
 /** Pages for signed-out visitors; signed-in users are sent home instead. */
 const GUEST_PATHS = ["/login", "/registro", "/recuperar"];
-/** Email-link landings: open to everyone, they create the session. */
+/** Open to everyone: the landing, legal pages and email-link landings. */
+const PUBLIC_PATHS = ["/", "/terminos", "/privacidad", "/robots.txt"];
 const PUBLIC_PREFIXES = ["/auth/"];
 
 /** Redirect that keeps the session cookies getUser() may have just refreshed. */
@@ -56,7 +57,9 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isGuestPath = GUEST_PATHS.includes(pathname);
   const isPublicPath =
-    isGuestPath || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+    isGuestPath ||
+    PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   // Only an optimistic check: pages and actions verify the session (and the
   // profile) again close to the data, see lib/auth/session.ts.
