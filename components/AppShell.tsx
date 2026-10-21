@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { logout } from "@/lib/actions/auth";
 import { SIDEBAR_COOKIE } from "@/lib/sidebar";
@@ -22,7 +22,9 @@ const SECTIONS = [
   { href: "/cuenta", label: "Mi cuenta", icon: "⚙️" },
 ];
 
-function isActive(pathname: string, href: string) {
+function isActive(pathname: string, href: string, mapFolder: string | null) {
+  // "Mapa" is the unfiltered map; a folder filter highlights the folder instead.
+  if (href === "/mapa") return pathname === "/mapa" && !mapFolder;
   return pathname.startsWith(href);
 }
 
@@ -203,6 +205,9 @@ function SidebarNav({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // A folder picked in the menu filters the main map (/mapa?carpeta=<id>).
+  const mapFolder = pathname === "/mapa" ? searchParams.get("carpeta") : null;
 
   const item = (active: boolean) =>
     `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -217,7 +222,7 @@ function SidebarNav({
     <nav aria-label="Secciones" className="flex flex-col gap-5 p-3">
       <ul className="flex flex-col gap-0.5">
         {SECTIONS.map((section) => {
-          const active = isActive(pathname, section.href);
+          const active = isActive(pathname, section.href, mapFolder);
           const badge = badges[section.href] ?? 0;
           return (
             <li key={section.href}>
@@ -283,15 +288,17 @@ function SidebarNav({
 
         <ul className="flex flex-col gap-0.5">
           {folders.map((folder) => {
-            const active = pathname.startsWith(`/carpetas/${folder.id}`);
+            const active =
+              mapFolder === folder.id || pathname.startsWith(`/carpetas/${folder.id}`);
             return (
-              <li key={folder.id}>
+              <li key={folder.id} className="group/folder relative">
+                {/* Tapping a folder filters the map; ⚙️ opens the folder itself. */}
                 <Link
-                  href={`/carpetas/${folder.id}`}
+                  href={`/mapa?carpeta=${folder.id}`}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
                   title={collapsed ? folder.name : undefined}
-                  className={item(active)}
+                  className={`${item(active)} ${collapsed ? "" : "pr-10"}`}
                 >
                   <span aria-hidden className="w-5 shrink-0 text-center text-base">
                     {folder.icon}
@@ -311,6 +318,17 @@ function SidebarNav({
                     </>
                   )}
                 </Link>
+                {!collapsed && (
+                  <Link
+                    href={`/carpetas/${folder.id}`}
+                    onClick={onNavigate}
+                    aria-label={`Abrir la carpeta ${folder.name}`}
+                    title="Abrir la carpeta (miembros, invitar)"
+                    className="absolute top-1/2 right-1.5 grid size-7 -translate-y-1/2 place-items-center rounded-md text-sm text-stone-400 transition hover:bg-stone-200 hover:text-stone-700 md:opacity-0 md:group-hover/folder:opacity-100 md:focus:opacity-100"
+                  >
+                    ⚙️
+                  </Link>
+                )}
               </li>
             );
           })}

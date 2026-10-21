@@ -10,7 +10,8 @@
     "lint": "eslint",
     "postinstall": "node scripts/copy-maplibre-worker.mjs && (prisma skills sync || exit 0)",
     "contract:emit": "prisma contract emit",
-    "test:e2e": "node --env-file=.env --test --test-concurrency=1 --test-reporter=spec tests/*.test.ts"
+    "test:e2e": "node --env-file=.env --test --test-concurrency=1 --test-reporter=spec tests/*.test.ts",
+    "test:browser": "node --env-file=.env tests/browser/smoke.ts"
   },
   "dependencies": {
     "@prisma/orm-postgres": "^8.0.0-rc.9",

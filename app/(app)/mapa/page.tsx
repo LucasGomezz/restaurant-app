@@ -34,6 +34,14 @@ export default async function MapPage(props: PageProps<"/mapa">) {
           folders={folders.map(({ id, name, icon }) => ({ id, name, icon }))}
           active={folder?.id}
         />
+        {folder && (
+          <Link
+            href={`/carpetas/${folder.id}`}
+            className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 shadow-xs transition hover:border-stone-300 hover:text-stone-900"
+          >
+            Abrir carpeta →
+          </Link>
+        )}
         <KindFilter
           basePath="/mapa"
           types={types}
@@ -60,6 +68,21 @@ export default async function MapPage(props: PageProps<"/mapa">) {
           </span>
         </span>
       </div>
+      {folder && places.length === 0 && !type && (
+        <div className="pointer-events-none absolute inset-0 z-[600] grid place-items-center p-4">
+          <div className="card pointer-events-auto flex max-w-sm flex-col items-center gap-3 p-6 text-center shadow-xl">
+            <span className="text-3xl" aria-hidden>
+              {folder.icon}
+            </span>
+            <p className="text-sm text-stone-600">
+              Todavía no hay lugares en <strong>{folder.name}</strong>.
+            </p>
+            <Link href={`/carpetas/${folder.id}`} className="btn-primary">
+              Sumar lugares
+            </Link>
+          </div>
+        </div>
+      )}
       {isNewUser && (
         <div className="pointer-events-none absolute inset-0 z-[600] grid place-items-center p-4">
           <div className="card pointer-events-auto flex w-full max-w-md flex-col gap-4 p-6 shadow-xl">
