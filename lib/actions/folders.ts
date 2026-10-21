@@ -143,7 +143,7 @@ export async function createInvite(id: string, role: FolderRole) {
   ).toISOString();
 
   await db.transaction(async (tx) => {
-    await tx.orm.public.FolderInvite.where({ folderId }).delete();
+    await tx.orm.public.FolderInvite.where({ folderId }).deleteAndCount();
     await tx.orm.public.FolderInvite.create({
       // The id is the secret in the link: generate it here, explicitly random.
       id: crypto.randomUUID(),
@@ -161,7 +161,7 @@ export async function revokeInvite(id: string) {
   const { user } = await requireUser();
   const { folderId } = await assertFolderRole(user.id, id, "OWNER");
 
-  await db.orm.public.FolderInvite.where({ folderId }).delete();
+  await db.orm.public.FolderInvite.where({ folderId }).deleteAndCount();
 
   refreshFolder(folderId);
 }
@@ -257,7 +257,7 @@ async function dropMember(folderId: string, userId: string) {
     if (ownPlaces.length > 0) {
       await tx.orm.public.FolderPlace.where({ folderId })
         .where((l) => l.placeId.in(ownPlaces.map((p) => p.id)))
-        .delete();
+        .deleteAndCount();
     }
   });
 }

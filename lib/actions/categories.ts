@@ -85,7 +85,7 @@ export async function updateCategory(
   // Places of the category follow its new base behaviour.
   await db.transaction(async (tx) => {
     await tx.orm.public.Category.where({ id: categoryId }).update(fields);
-    await tx.orm.public.Restaurant.where({ categoryId }).update({
+    await tx.orm.public.Restaurant.where({ categoryId }).updateAndCount({
       kind: fields.baseKind,
     });
   });

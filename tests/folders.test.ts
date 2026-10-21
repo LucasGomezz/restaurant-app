@@ -32,6 +32,7 @@ const names = {
   shared: `Compartido ${RUN}`,
   private: `Privado de Ana ${RUN}`,
   beto: `Lugar de Beto ${RUN}`,
+  beto2: `Otro de Beto ${RUN}`,
 };
 const ids = {
   folder: "",
@@ -39,6 +40,7 @@ const ids = {
   shared: 0,
   private: 0,
   beto: 0,
+  beto2: 0,
   visit: 0,
   dish: 0,
 };
@@ -75,6 +77,7 @@ before(async () => {
   const dish = await db.orm.public.Dish.create({ visitId: visit.id, name: "Empanada" });
   const privatePlace = await seedPlace(ana.id, names.private);
   const betoPlace = await seedPlace(beto.id, names.beto);
+  const betoPlace2 = await seedPlace(beto.id, names.beto2);
 
   const folder = await db.orm.public.Folder.create({ name: `Viaje ${RUN}` });
   const betoFolder = await db.orm.public.Folder.create({ name: `De Beto ${RUN}` });
@@ -90,6 +93,7 @@ before(async () => {
     shared: shared.id,
     private: privatePlace.id,
     beto: betoPlace.id,
+    beto2: betoPlace2.id,
     visit: visit.id,
     dish: dish.id,
   });
@@ -190,9 +194,11 @@ describe("miembro con rol 'editar'", () => {
   });
 
   test("puede sumar sus propios lugares, y Ana los ve", async () => {
-    await callAction(beto.session, folderPath(), "addPlaceToFolder", [ids.beto, ids.folder]);
-    assert.equal(await isInFolder(ids.beto), true);
-    assert.equal((await page(ana.session, `/lugares/${ids.beto}`)).status, 200);
+    for (const id of [ids.beto, ids.beto2]) {
+      await callAction(beto.session, folderPath(), "addPlaceToFolder", [id, ids.folder]);
+      assert.equal(await isInFolder(id), true);
+      assert.equal((await page(ana.session, `/lugares/${id}`)).status, 200);
+    }
   });
 });
 
@@ -244,11 +250,13 @@ describe("salir y sacar miembros", () => {
     assert.equal((await page(carla.session, sharedPath())).status, 404);
   });
 
-  test("cuando Beto sale, sus lugares salen con él", async () => {
+  test("cuando Beto sale, todos sus lugares salen con él", async () => {
     await callAction(beto.session, folderPath(), "leaveFolder", [ids.folder]);
     assert.equal(await roleOf(beto), null);
-    assert.equal(await isInFolder(ids.beto), false);
-    assert.equal((await page(ana.session, `/lugares/${ids.beto}`)).status, 404);
+    for (const id of [ids.beto, ids.beto2]) {
+      assert.equal(await isInFolder(id), false);
+      assert.equal((await page(ana.session, `/lugares/${id}`)).status, 404);
+    }
     assert.equal((await page(beto.session, sharedPath())).status, 404);
   });
 
