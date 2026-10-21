@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  use,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   LngLatBounds,
@@ -19,12 +11,20 @@ import {
   setWorkerUrl,
   type GeoJSONSource,
 } from "maplibre-gl";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./map.css";
-import { formatShortDate } from "@/lib/format";
-import type { PlacePreview } from "@/lib/queries/restaurants";
+import {
+  CAN_HOVER,
+  GroupList,
+  MIXED_COLOR,
+  PENDING_COLOR,
+  PreviewCard,
+  VISITED_COLOR,
+  colorFor,
+  groupByLocation,
+  loadPreview,
+} from "@/components/MapShared";
 import type { RestaurantMarker } from "@/lib/types";
 
 /**
@@ -36,10 +36,6 @@ const STYLE_URL =
   process.env.NEXT_PUBLIC_MAP_STYLE_URL ??
   "https://tiles.openfreemap.org/styles/liberty";
 
-const VISITED_COLOR = "#059669";
-const PENDING_COLOR = "#f59e0b";
-/** A pin or cluster mixing visited and pending places. */
-const MIXED_COLOR = "#0d857b";
 const DEFAULT_CENTER: [number, number] = [-34.6037, -58.3816];
 /** Past this zoom every pin shows on its own. */
 const CLUSTER_MAX_ZOOM = 14;
@@ -48,28 +44,20 @@ const CLUSTER_MAX_ZOOM = 14;
 // lookup of its worker file doesn't survive bundling.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-// This module only loads in the browser (MapLoader uses ssr: false).
-// With a mouse: hover previews a place and a click opens it.
-// On touch screens there's no hover, so a tap opens the preview instead.
-const CAN_HOVER = window.matchMedia("(hover: hover)").matches;
-
 type Position = { lat: number; lng: number };
 
-type MapProps = {
+export type MapProps = {
   restaurants: RestaurantMarker[];
   center?: [number, number];
   zoom?: number;
   onMapClick?: (lat: number, lng: number) => void;
   selected?: Position | null;
   scrollWheelZoom?: boolean;
+  /** Called if this browser can't run MapLibre (no WebGL2), to fall back. */
+  onUnsupported?: () => void;
 };
 
 // ---------- Pins ----------
-
-function colorFor(visited: number, total: number) {
-  if (visited === total) return VISITED_COLOR;
-  return visited === 0 ? PENDING_COLOR : MIXED_COLOR;
-}
 
 function escapeHtml(value: string) {
   return value.replace(
@@ -102,16 +90,6 @@ function clusterElement(count: number, color: string) {
   return element;
 }
 
-/** Places closer than ~1 m share a pin (e.g. two events at the same venue). */
-function groupByLocation(restaurants: RestaurantMarker[]) {
-  const groups = new globalThis.Map<string, RestaurantMarker[]>();
-  for (const place of restaurants) {
-    const key = `${place.lat.toFixed(5)},${place.lng.toFixed(5)}`;
-    groups.set(key, [...(groups.get(key) ?? []), place]);
-  }
-  return groups;
-}
-
 function toGeoJSON(groups: globalThis.Map<string, RestaurantMarker[]>) {
   return {
     type: "FeatureCollection" as const,
@@ -136,146 +114,6 @@ type PopupState =
   | { kind: "preview"; place: RestaurantMarker; sticky: boolean }
   | { kind: "group"; places: RestaurantMarker[] };
 
-const previews = new globalThis.Map<string, Promise<PlacePreview | null>>();
-
-/** Fetched once per place and page view (the answer has signed URLs). */
-function loadPreview(id: string) {
-  let promise = previews.get(id);
-  if (!promise) {
-    promise = fetch(`/api/lugares/${id}/preview`)
-      .then((response) => (response.ok ? response.json() : null))
-      .catch(() => null);
-    previews.set(id, promise);
-  }
-  return promise;
-}
-
-function PreviewPhotos({ id, name }: { id: string; name: string }) {
-  const preview = use(loadPreview(id));
-  if (!preview || preview.photos.length === 0) return null;
-  return (
-    <div className="flex h-40 gap-1 overflow-hidden rounded-lg bg-stone-100">
-      {preview.photos.map((url) => (
-        // Signed Supabase URLs inside a map popup: a plain <img> is simplest.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img key={url} src={url} alt={name} className="h-full min-w-0 flex-1 object-cover" />
-      ))}
-    </div>
-  );
-}
-
-function PreviewVisit({ id }: { id: string }) {
-  const preview = use(loadPreview(id));
-  if (!preview?.date) return null;
-  return (
-    <>
-      <p className="text-xs text-stone-500">
-        🗓 {formatShortDate(preview.date)}
-        {preview.visitCount > 1 && ` · 🔁 Fueron ${preview.visitCount} veces`}
-      </p>
-      {preview.text && (
-        <p className="line-clamp-2 text-xs text-stone-600">{preview.text}</p>
-      )}
-    </>
-  );
-}
-
-function PreviewCard({ place, sticky }: { place: RestaurantMarker; sticky: boolean }) {
-  return (
-    <div className={`flex flex-col gap-2 ${sticky ? "w-56" : "w-64"}`}>
-      <Suspense fallback={<div className="h-40 animate-pulse rounded-lg bg-stone-100" />}>
-        <PreviewPhotos id={place.id} name={place.name} />
-      </Suspense>
-      <div className="flex flex-col gap-0.5 px-1">
-        {sticky && <StatusLine place={place} />}
-        <p className="text-sm font-semibold text-stone-900">{place.name}</p>
-        <Suspense fallback={null}>
-          <PreviewVisit id={place.id} />
-        </Suspense>
-        {sticky && place.address && (
-          <p className="text-xs text-stone-500">{place.address}</p>
-        )}
-        {sticky && (
-          <Link href={`/lugares/${place.id}`} className="link mt-1 text-sm">
-            Ver detalle →
-          </Link>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StatusLine({ place }: { place: RestaurantMarker }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
-          place.status === "VISITED"
-            ? "bg-emerald-50 text-emerald-700"
-            : "bg-amber-50 text-amber-700"
-        }`}
-      >
-        {place.status === "VISITED" ? "Visitado" : "Pendiente"}
-      </span>
-      <span className="text-xs text-stone-500">
-        {place.icon} {place.typeLabel}
-      </span>
-    </span>
-  );
-}
-
-/** Several places at the same spot: tapping their pin lists them all. */
-function GroupList({ places }: { places: RestaurantMarker[] }) {
-  return (
-    <div className="flex w-60 flex-col gap-2">
-      <p className="text-xs font-semibold tracking-wide text-stone-500 uppercase">
-        {places.length} en este lugar
-      </p>
-      {places[0].address && (
-        <p className="-mt-1 truncate text-xs text-stone-500">{places[0].address}</p>
-      )}
-      <ul className="flex max-h-72 flex-col divide-y divide-stone-100 overflow-y-auto">
-        {[...places]
-          .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
-          .map((place) => (
-            <li key={place.id}>
-              <Link
-                href={`/lugares/${place.id}`}
-                className="flex items-center gap-2.5 py-2 text-stone-900 transition hover:text-brand-700"
-              >
-                <span
-                  className="grid size-10 shrink-0 place-items-center rounded-lg bg-stone-100 text-lg"
-                  aria-hidden
-                >
-                  {place.icon}
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-semibold">{place.name}</span>
-                  <span className="flex items-center gap-1 text-xs text-stone-500">
-                    <span
-                      className="size-2 rounded-full"
-                      style={{
-                        background:
-                          place.status === "VISITED" ? VISITED_COLOR : PENDING_COLOR,
-                      }}
-                    />
-                    {place.status === "VISITED" ? "Visitado" : "Pendiente"} ·{" "}
-                    {place.icon} {place.typeLabel}
-                  </span>
-                  {place.date && (
-                    <span className="text-[11px] text-stone-400">
-                      🗓 {formatShortDate(place.date)}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            </li>
-          ))}
-      </ul>
-    </div>
-  );
-}
-
 // ---------- Map ----------
 
 export default function Map({
@@ -285,6 +123,7 @@ export default function Map({
   onMapClick,
   selected,
   scrollWheelZoom = true,
+  onUnsupported,
 }: MapProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -310,18 +149,25 @@ export default function Map({
   // ----- Create the map once -----
   useEffect(() => {
     const first = restaurants[0];
-    const map = new MapLibreMap({
-      container: containerRef.current!,
-      style: STYLE_URL,
-      center: center
-        ? [center[1], center[0]]
-        : first
-          ? [first.lng, first.lat]
-          : [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
-      zoom,
-      scrollZoom: scrollWheelZoom,
-      attributionControl: { compact: true },
-    });
+    let map: MapLibreMap;
+    try {
+      map = new MapLibreMap({
+        container: containerRef.current!,
+        style: STYLE_URL,
+        center: center
+          ? [center[1], center[0]]
+          : first
+            ? [first.lng, first.lat]
+            : [DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
+        zoom,
+        scrollZoom: scrollWheelZoom,
+        attributionControl: { compact: true },
+      });
+    } catch {
+      // No WebGL2 (old GPU, hardware acceleration off…): MapLoader falls back.
+      onUnsupported?.();
+      return;
+    }
     map.addControl(new NavigationControl({ showCompass: false }), "top-left");
     map.on("click", (event) => onMapClickRef.current?.(event.lngLat.lat, event.lngLat.lng));
     map.on("load", () => setReady(true));
@@ -509,12 +355,16 @@ export default function Map({
     }
     const at: [number, number] = [selected.lng, selected.lat];
     if (!selectedRef.current) {
+      // MapLibre needs the position before the marker is added to the map.
       selectedRef.current = new Marker({
         element: pinElement(MIXED_COLOR, ""),
         anchor: "bottom",
-      }).addTo(map);
+      })
+        .setLngLat(at)
+        .addTo(map);
+    } else {
+      selectedRef.current.setLngLat(at);
     }
-    selectedRef.current.setLngLat(at);
     // Bring it into view when it's off-screen (e.g. after an address search).
     if (!map.getBounds().contains(at)) {
       map.jumpTo({ center: at, zoom: Math.max(map.getZoom(), 15) });
