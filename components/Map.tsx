@@ -38,10 +38,11 @@ const STYLE_URL =
 
 const DEFAULT_CENTER: [number, number] = [-34.6037, -58.3816];
 /**
- * Pins only group when the map is far out (province / country). From about
- * city zoom (11) up, every pin shows on its own.
+ * Pins only group when looking at a whole province or the country. From a
+ * regional view (zoom 8, e.g. all of Gran Buenos Aires) in, every pin shows
+ * on its own.
  */
-const CLUSTER_MAX_ZOOM = 10;
+const CLUSTER_MAX_ZOOM = 7;
 /** How close (in screen pixels) pins must be to group. */
 const CLUSTER_RADIUS = 36;
 
