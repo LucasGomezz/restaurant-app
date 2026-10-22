@@ -135,7 +135,8 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 - El worker de MapLibre se sirve desde `public/maplibre/` (lo copia `scripts/copy-maplibre-worker.mjs`
   en cada `npm install`): la forma en que MapLibre lo busca no sobrevive al empaquetado de Next.
 - Miniaturas de ~400px generadas al subir y servidas directo (sin el optimizador de Vercel).
-- Agrupación de pines (clustering) nativa de MapLibre.
+- Sin agrupar pines cercanos: se probó con clusters de MapLibre, pero los pines
+  sueltos tomaban la posición redondeada de los mosaicos y se corrían al hacer zoom.
 - Con muchos lugares: pedir solo los que caen en la zona visible del mapa.
 
 ## Monetización (resumen)
@@ -175,7 +176,7 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 ### Fase 3 — Mapa nuevo
 - [x] MapLibre GL + OpenFreeMap (vectorial, sin API key); estilo configurable
       con `NEXT_PUBLIC_MAP_STYLE_URL`
-- [x] Pines cercanos agrupados (clusters); los del mismo punto, en un solo pin
+- [x] Los lugares en el mismo punto exacto comparten un pin (sin agrupar pines cercanos)
 - [x] Fotos y texto bajo demanda: `/api/lugares/<id>/preview`, uno por pin
 - [x] Filtro por carpeta en el mapa (`?carpeta=`)
 - [x] Geocoding detrás de `lib/geocoding.ts` (Nominatim por defecto, Geoapify

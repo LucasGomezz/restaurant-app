@@ -81,23 +81,3 @@
   line-height: 16px;
   pointer-events: none;
 }
-
-/* Several nearby places, zoomed out: tap to zoom in. */
-.map-cluster {
-  display: grid;
-  place-items: center;
-  width: var(--size);
-  height: var(--size);
-  border: 3px solid white;
-  border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(28, 25, 23, 0.35);
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 150ms;
-}
-
-.map-cluster:hover {
-  transform: scale(1.08);
-}

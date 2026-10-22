@@ -9,7 +9,6 @@ import {
   NavigationControl,
   Popup,
   setWorkerUrl,
-  type GeoJSONSource,
 } from "maplibre-gl";
 import { useRouter } from "next/navigation";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -37,15 +36,6 @@ const STYLE_URL =
   "https://tiles.openfreemap.org/styles/liberty";
 
 const DEFAULT_CENTER: [number, number] = [-34.6037, -58.3816];
-/**
- * Pins only group when looking at a whole province or the country. From a
- * regional view (zoom 8, e.g. all of Gran Buenos Aires) in, every pin shows
- * on its own.
- */
-const CLUSTER_MAX_ZOOM = 7;
-/** How close (in screen pixels) pins must be to group. */
-const CLUSTER_RADIUS = 36;
-
 // Served from public/ (see scripts/copy-maplibre-worker.mjs): MapLibre's own
 // lookup of its worker file doesn't survive bundling.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -85,35 +75,6 @@ function pinElement(color: string, content: string, label?: string) {
   return element;
 }
 
-function clusterElement(count: number, color: string) {
-  const element = document.createElement("button");
-  element.type = "button";
-  element.className = "map-cluster";
-  element.style.background = color;
-  element.style.setProperty("--size", `${Math.min(56, 30 + Math.log2(count) * 6)}px`);
-  element.textContent = String(count);
-  element.setAttribute("aria-label", `${count} lugares: acercar`);
-  return element;
-}
-
-function toGeoJSON(groups: globalThis.Map<string, RestaurantMarker[]>) {
-  return {
-    type: "FeatureCollection" as const,
-    features: [...groups.entries()].map(([key, places]) => ({
-      type: "Feature" as const,
-      geometry: {
-        type: "Point" as const,
-        coordinates: [places[0].lng, places[0].lat],
-      },
-      properties: {
-        key,
-        total: places.length,
-        visited: places.filter((p) => p.status === "VISITED").length,
-      },
-    })),
-  };
-}
-
 // ---------- Popups ----------
 
 type PopupState =
@@ -144,12 +105,10 @@ export default function Map({
 
   const groups = useMemo(() => groupByLocation(restaurants), [restaurants]);
 
-  // Latest callbacks for listeners registered once.
+  // Latest callback for the click listener registered once.
   const onMapClickRef = useRef(onMapClick);
-  const groupsRef = useRef(groups);
   useEffect(() => {
     onMapClickRef.current = onMapClick;
-    groupsRef.current = groups;
   });
 
   // ----- Create the map once -----
@@ -201,62 +160,22 @@ export default function Map({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ----- Places: clustered source + HTML pins kept in sync with it -----
+  // ----- Places: one HTML pin per location, at its exact coordinates -----
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-
-    const data = toGeoJSON(groups);
-    const existing = map.getSource<GeoJSONSource>("places");
-    if (existing) {
-      existing.setData(data);
-      return;
-    }
-
-    map.addSource("places", {
-      type: "geojson",
-      data,
-      cluster: true,
-      clusterRadius: CLUSTER_RADIUS,
-      clusterMaxZoom: CLUSTER_MAX_ZOOM,
-      clusterProperties: {
-        total: ["+", ["get", "total"]],
-        visited: ["+", ["get", "visited"]],
-      },
-    });
-    // Invisible layer: the source only computes clusters for rendered layers.
-    map.addLayer({
-      id: "places-anchor",
-      type: "circle",
-      source: "places",
-      paint: { "circle-radius": 0, "circle-opacity": 0 },
-    });
-
-    const markers = new globalThis.Map<string, Marker>();
 
     function openPopup(state: PopupState, at: [number, number]) {
       setPopup({ ...state, at });
     }
 
-    function createMarker(id: string, properties: Record<string, unknown>, at: [number, number]) {
-      if (properties.cluster) {
-        const element = clusterElement(
-          Number(properties.total),
-          colorFor(Number(properties.visited), Number(properties.total)),
-        );
-        element.addEventListener("click", async (event) => {
-          event.stopPropagation();
-          const source = map!.getSource<GeoJSONSource>("places");
-          const zoomTo = await source?.getClusterExpansionZoom(Number(properties.cluster_id));
-          map!.easeTo({ center: at, zoom: (zoomTo ?? map!.getZoom() + 2) + 0.5 });
-        });
-        return new Marker({ element }).setLngLat(at);
-      }
+    function createMarker(places: RestaurantMarker[]) {
+      const at: [number, number] = [places[0].lng, places[0].lat];
 
-      const places = groupsRef.current.get(String(properties.key)) ?? [];
       if (places.length > 1) {
+        const visited = places.filter((p) => p.status === "VISITED").length;
         const element = pinElement(
-          colorFor(Number(properties.visited), places.length),
+          colorFor(visited, places.length),
           `<b>${places.length}</b>`,
           `${places[0].name} +${places.length - 1}`,
         );
@@ -296,38 +215,10 @@ export default function Map({
       return new Marker({ element, anchor: "bottom" }).setLngLat(at);
     }
 
-    function sync() {
-      if (!map!.isSourceLoaded("places")) return;
-      const seen = new Set<string>();
-      for (const feature of map!.querySourceFeatures("places")) {
-        const properties = feature.properties;
-        const id = properties.cluster
-          ? `cluster-${properties.cluster_id}`
-          : `pin-${properties.key}`;
-        // A feature can come back once per tile it touches.
-        if (seen.has(id)) continue;
-        seen.add(id);
-        if (!markers.has(id) && feature.geometry.type === "Point") {
-          const at = feature.geometry.coordinates as [number, number];
-          markers.set(id, createMarker(id, properties, at).addTo(map!));
-        }
-      }
-      for (const [id, marker] of markers) {
-        if (!seen.has(id)) {
-          marker.remove();
-          markers.delete(id);
-        }
-      }
-    }
-
-    map.on("render", sync);
-    map.on("sourcedata", (event) => {
-      // New data (filter changed): rebuild every pin from scratch.
-      if (event.sourceId === "places" && event.sourceDataType === "content") {
-        for (const marker of markers.values()) marker.remove();
-        markers.clear();
-      }
-    });
+    const markers = [...groups.values()].map((places) => createMarker(places).addTo(map));
+    return () => {
+      for (const marker of markers) marker.remove();
+    };
   }, [groups, ready, router]);
 
   // ----- Popup: position it and render its React content -----

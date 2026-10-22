@@ -31,7 +31,7 @@ import type { RestaurantMarker } from "@/lib/types";
 
 /**
  * Fallback for browsers that can't run MapLibre (no WebGL2): the same map on
- * raster OpenStreetMap tiles, without clustering. MapLoader picks it.
+ * raster OpenStreetMap tiles. MapLoader picks it.
  */
 
 const PIN_SIZE = 30;

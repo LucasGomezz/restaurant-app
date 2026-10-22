@@ -11,7 +11,7 @@ import type { RestaurantMarker } from "@/lib/types";
 
 export const VISITED_COLOR = "#059669";
 export const PENDING_COLOR = "#f59e0b";
-/** A pin or cluster mixing visited and pending places. */
+/** A shared pin mixing visited and pending places. */
 export const MIXED_COLOR = "#0d857b";
 
 // This module only loads in the browser (MapLoader uses ssr: false).
