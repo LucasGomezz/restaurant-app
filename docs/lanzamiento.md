@@ -61,7 +61,7 @@ npx prisma db verify  --db "postgresql://…producción…"
 
 | Variable | Valor |
 |---|---|
-| `DATABASE_URL` | Session pooler de producción (puerto 5432) |
+| `DATABASE_URL` | URL de producción **con el puerto 6543** (pooler en modo transacción). Las migraciones del paso 3 usan la misma URL con el puerto 5432 |
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto de producción |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable / anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret / service_role key |

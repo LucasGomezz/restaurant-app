@@ -122,13 +122,14 @@ Verificar los términos de cada plan gratuito al implementar cada capa: cambian 
 
 ## Rendimiento
 
-- **Conexiones a la base:** el pooler de Supabase en modo sesión admite pocas
-  conexiones para todo el proyecto (15 en el plan free). Cada proceso usa un
-  pool chico (`DATABASE_POOL_MAX`, 3 por defecto, en `src/prisma/db.ts`). En
-  Vercel cada instancia serverless abre el suyo: con mucho tráfico, el límite
-  se alcanza antes que cualquier otro. Opciones al crecer: Supabase pago (más
-  conexiones) o el pooler de transacciones si Prisma Next lo soporta.
-
+- **Conexiones a la base:** el pooler de Supabase en modo sesión (5432) reserva una
+  conexión por cliente (15 en total en el plan free) y una instancia serverless
+  congelada no las libera, así que unas pocas instancias de Vercel lo agotan. En
+  Vercel se usa el pooler en modo **transacción** (6543), que solo ocupa una
+  conexión mientras dura cada consulta. Como ese modo no admite prepared statements
+  con nombre y `postgres()` de Prisma Next no permite apagarlas, `src/prisma/db.ts`
+  les quita el nombre cuando la URL usa el puerto 6543. Local, scripts y migraciones
+  siguen en 5432.
 - El mapa carga solo datos livianos de cada lugar (nombre, tipo, estado, fecha); las fotos y el
   texto de un pin se piden al abrirlo (`/api/lugares/<id>/preview`, con caché del navegador).
 - El worker de MapLibre se sirve desde `public/maplibre/` (lo copia `scripts/copy-maplibre-worker.mjs`

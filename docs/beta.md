@@ -52,7 +52,7 @@ modifica ni borra nada.
 
    | Variable | Valor |
    |---|---|
-   | `DATABASE_URL` | Session pooler de desarrollo (puerto 5432) |
+   | `DATABASE_URL` | La URL de desarrollo **con el puerto 6543** (pooler en modo transacción) en vez de 5432 |
    | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto de desarrollo |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Su anon / publishable key |
    | `SUPABASE_SERVICE_ROLE_KEY` | Su service_role / secret key |
