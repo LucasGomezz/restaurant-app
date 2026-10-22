@@ -37,8 +37,13 @@ const STYLE_URL =
   "https://tiles.openfreemap.org/styles/liberty";
 
 const DEFAULT_CENTER: [number, number] = [-34.6037, -58.3816];
-/** Past this zoom every pin shows on its own. */
-const CLUSTER_MAX_ZOOM = 14;
+/**
+ * Pins only group when the map is far out (province / country). From about
+ * city zoom (11) up, every pin shows on its own.
+ */
+const CLUSTER_MAX_ZOOM = 10;
+/** How close (in screen pixels) pins must be to group. */
+const CLUSTER_RADIUS = 36;
 
 // Served from public/ (see scripts/copy-maplibre-worker.mjs): MapLibre's own
 // lookup of its worker file doesn't survive bundling.
@@ -211,7 +216,7 @@ export default function Map({
       type: "geojson",
       data,
       cluster: true,
-      clusterRadius: 48,
+      clusterRadius: CLUSTER_RADIUS,
       clusterMaxZoom: CLUSTER_MAX_ZOOM,
       clusterProperties: {
         total: ["+", ["get", "total"]],
