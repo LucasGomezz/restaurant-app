@@ -30,9 +30,13 @@
   box-shadow: 0 2px 8px rgba(28, 25, 23, 0.15) !important;
 }
 
-/* Teardrop pin: a rotated square with one sharp corner pointing down. */
+/* Teardrop pin: a rotated square with one sharp corner pointing down.
+   `absolute` matters: MapLibre places each marker with a transform from the
+   map's corner, which only works if the marker is out of the normal flow.
+   With `relative` (and this file loading after maplibre-gl.css) every pin
+   was pushed down by the ones before it. */
 .map-pin {
-  position: relative;
+  position: absolute;
   width: 30px;
   height: 34px;
   cursor: pointer;

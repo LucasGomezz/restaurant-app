@@ -117,7 +117,7 @@ export async function openChrome(
     evaluate,
     async signIn(session: Session) {
       for (const [name, value] of session.cookies) {
-        await send("Network.setCookie", { name, value, domain: "localhost", path: "/" });
+        await send("Network.setCookie", { name, value, url: BASE });
       }
     },
     async goto(path: string, wait = 5000) {

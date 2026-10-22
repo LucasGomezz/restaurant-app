@@ -130,6 +130,53 @@ try {
     await db.orm.public.Restaurant.where({ id: other.id }).delete();
   });
 
+  // ---------- Pins sit exactly on their coordinates ----------
+  await step(b, "los pines quedan en su coordenada exacta", async () => {
+    // Scale from two pins, then predict the others with Web Mercator: a pin
+    // pushed out of place (e.g. by CSS) misses by tens of pixels.
+    const coords: [number, number][] = [
+      [-34.6037, -58.3816], [-34.58, -58.43], [-34.62, -58.37], [-34.595, -58.4], [-34.61, -58.41],
+    ];
+    const created: number[] = [];
+    for (const [i, [lat, lng]] of coords.entries()) {
+      const place = await seedPlace(user.id, `Geo ${i}`);
+      await db.orm.public.Restaurant.where({ id: place.id }).update({ lat, lng });
+      created.push(place.id);
+    }
+    const geoFolder = await db.orm.public.Folder.create({ name: "Geo" });
+    await db.orm.public.FolderMember.create({ folderId: geoFolder.id, userId: user.id, role: "OWNER" });
+    await db.orm.public.FolderPlace.createAll(created.map((placeId) => ({ folderId: geoFolder.id, placeId })));
+    try {
+      await b.goto(`/mapa?carpeta=${geoFolder.id}`, 9000);
+      const tips: Record<string, [number, number]> = JSON.parse(
+        await b.evaluate(
+          `JSON.stringify(Object.fromEntries([...document.querySelectorAll(".map-pin")].map((p) => { const d = p.querySelector(".map-pin-drop").getBoundingClientRect(); return [p.querySelector(".map-pin-label")?.textContent, [d.left + d.width / 2, d.bottom]]; })))`,
+        ),
+      );
+      const merc = ([lat, lng]: [number, number]) => [
+        lng / 360,
+        -Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / (2 * Math.PI),
+      ];
+      const m = coords.map(merc);
+      const at = (i: number) => tips[`Geo ${i}`];
+      expect(coords.every((_, i) => at(i)), `faltan pines: ${Object.keys(tips).join(", ")}`);
+      const scale =
+        Math.hypot(at(1)[0] - at(0)[0], at(1)[1] - at(0)[1]) /
+        Math.hypot(m[1][0] - m[0][0], m[1][1] - m[0][1]);
+      let worst = 0;
+      for (let i = 2; i < coords.length; i++) {
+        const x = at(0)[0] + (m[i][0] - m[0][0]) * scale;
+        const y = at(0)[1] + (m[i][1] - m[0][1]) * scale;
+        worst = Math.max(worst, Math.hypot(x - at(i)[0], y - at(i)[1]));
+      }
+      expect(worst < 6, `pines corridos hasta ${worst.toFixed(0)} px`);
+      return `error máximo ${worst.toFixed(1)} px`;
+    } finally {
+      await db.orm.public.Folder.where({ id: geoFolder.id }).delete();
+      for (const id of created) await db.orm.public.Restaurant.where({ id }).delete();
+    }
+  });
+
   // ---------- Every page opens without browser errors ----------
   for (const path of ["/mapa", "/pendientes", "/visitados", "/tipos", "/amigos", "/carpetas", "/cuenta", placePath, `${placePath}/editar`, `/carpetas/${folderId}`]) {
     await step(b, `abrir ${path.replace(/[0-9a-f-]{36}/, "<id>")}`, async () => {
